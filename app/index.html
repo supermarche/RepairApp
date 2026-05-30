@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>RepairApp MVP</title>
+    <link rel="stylesheet" href="./styles.css">
+  </head>
+  <body>
+    <main class="app-shell">
+      <section class="intro" aria-labelledby="page-title">
+        <p class="eyebrow">Hackathon MVP</p>
+        <h1 id="page-title">RepairApp Problem Check</h1>
+        <p>
+          Describe the object and what is wrong. The demo follows the
+          Problemanalyse flow: classify the item, check safety, compare action
+          options, and suggest one cautious next step.
+        </p>
+      </section>
+
+      <section class="workspace" aria-label="Repair analysis">
+        <form class="input-panel" id="repair-form">
+          <label for="category">Object category</label>
+          <select id="category" name="category">
+            <option value="electrical">Electrical device</option>
+            <option value="furniture">Furniture</option>
+            <option value="tool">Tool or accessory</option>
+            <option value="household">Household item</option>
+            <option value="unknown">Not sure</option>
+          </select>
+
+          <label for="problem">Problem description</label>
+          <textarea
+            id="problem"
+            name="problem"
+            rows="8"
+            placeholder="Example: My phone battery is swollen and the case is warm."
+            required
+          ></textarea>
+
+          <button type="submit">Analyze</button>
+        </form>
+
+        <section class="result-panel" aria-live="polite" aria-label="Analysis result">
+          <div class="result-header">
+            <div>
+              <p class="eyebrow">Result</p>
+              <h2 id="risk-title">Waiting for input</h2>
+            </div>
+            <span class="risk-badge neutral" id="risk-badge">Not analyzed</span>
+          </div>
+
+          <div class="warning hidden" id="safety-warning" role="alert"></div>
+
+          <div class="summary-grid">
+            <div>
+              <h3>Failure type</h3>
+              <p id="failure-type">Describe a problem to classify it.</p>
+            </div>
+            <div>
+              <h3>Detected signals</h3>
+              <p id="signals">No signals yet.</p>
+            </div>
+          </div>
+
+          <div>
+            <h3>Action options</h3>
+            <div class="actions-grid" id="actions"></div>
+          </div>
+
+          <div class="recommendation">
+            <h3>Recommended next step</h3>
+            <p id="recommendation">Run an analysis to get a concise next step.</p>
+          </div>
+
+          <div class="prevention">
+            <h3>Prevention tip</h3>
+            <p id="prevention">Prevention guidance will appear here.</p>
+          </div>
+        </section>
+      </section>
+    </main>
+
+    <script type="module" src="./js/app.js"></script>
+  </body>
+</html>
