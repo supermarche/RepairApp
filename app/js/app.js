@@ -1,8 +1,10 @@
 import { analyzeProblem } from "./analyzer.js";
+import { matchResources, resourceTypes, typeLabel } from "./resources.js";
 
 const form = document.querySelector("#repair-form");
 const category = document.querySelector("#category");
 const problem = document.querySelector("#problem");
+const exampleButtons = document.querySelectorAll("[data-example]");
 const riskTitle = document.querySelector("#risk-title");
 const riskBadge = document.querySelector("#risk-badge");
 const safetyWarning = document.querySelector("#safety-warning");
@@ -11,6 +13,21 @@ const signals = document.querySelector("#signals");
 const actions = document.querySelector("#actions");
 const recommendation = document.querySelector("#recommendation");
 const prevention = document.querySelector("#prevention");
+const resourceType = document.querySelector("#resource-type");
+const resourceCategory = document.querySelector("#resource-category");
+const helpSummary = document.querySelector("#help-summary");
+const resources = document.querySelector("#resources");
+
+let latestResult = null;
+
+resourceType.replaceChildren(
+  ...resourceTypes.map((type) => {
+    const option = document.createElement("option");
+    option.value = type.value;
+    option.textContent = type.label;
+    return option;
+  }),
+);
 
 form.addEventListener("submit", (event) => {
   event.preventDefault();
@@ -20,7 +37,28 @@ form.addEventListener("submit", (event) => {
     description: problem.value,
   });
 
+  latestResult = result;
   renderResult(result);
+  renderResources();
+});
+
+resourceType.addEventListener("change", renderResources);
+resourceCategory.addEventListener("change", renderResources);
+
+exampleButtons.forEach((button) => {
+  button.addEventListener("click", () => {
+    const example = button.dataset.example;
+
+    if (example === "battery") {
+      category.value = "electrical";
+      problem.value = "My laptop battery is swollen and the case feels warm.";
+    } else {
+      category.value = "tool";
+      problem.value = "My selfie stick is stuck and the clamp will not move.";
+    }
+
+    form.requestSubmit();
+  });
 });
 
 function renderResult(result) {
@@ -68,6 +106,53 @@ function renderResult(result) {
 
   recommendation.textContent = result.recommendedNextStep;
   prevention.textContent = result.preventionTip;
+}
+
+function renderResources() {
+  if (!latestResult) {
+    return;
+  }
+
+  const matches = matchResources({
+    category: latestResult.category,
+    riskLevel: latestResult.riskLevel,
+    typeFilter: resourceType.value,
+    categoryFilter: resourceCategory.value,
+  });
+
+  helpSummary.textContent = `${latestResult.helpNeeded}. Showing ${matches.length} matching local demo resources, prioritized for ${latestResult.riskLevel} risk.`;
+
+  resources.replaceChildren(
+    ...matches.map((resource) => {
+      const card = document.createElement("article");
+      card.className = "resource-card";
+
+      const heading = document.createElement("h4");
+      heading.textContent = resource.name;
+
+      const meta = document.createElement("p");
+      meta.className = "resource-meta";
+      meta.textContent = `${typeLabel(resource.type)} | ${resource.location}`;
+
+      const description = document.createElement("p");
+      description.textContent = resource.description;
+
+      const services = document.createElement("p");
+      services.className = "resource-services";
+      services.textContent = `Services: ${resource.services.join(", ")}`;
+
+      const reason = document.createElement("p");
+      reason.className = "match-reason";
+      reason.textContent = resource.matchReason;
+
+      const source = document.createElement("span");
+      source.className = "source-badge";
+      source.textContent = resource.source;
+
+      card.append(heading, meta, description, services, reason, source);
+      return card;
+    }),
+  );
 }
 
 function riskTitleText(level) {

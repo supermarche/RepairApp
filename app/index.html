@@ -14,7 +14,8 @@
         <p>
           Describe the object and what is wrong. The demo follows the
           Problemanalyse flow: classify the item, check safety, compare action
-          options, and suggest one cautious next step.
+          options, suggest one cautious next step, and connect the case with
+          suitable local repair resources.
         </p>
       </section>
 
@@ -37,6 +38,15 @@
             placeholder="Example: My phone battery is swollen and the case is warm."
             required
           ></textarea>
+
+          <div class="example-row" aria-label="Example problems">
+            <button type="button" class="secondary-button" data-example="selfie">
+              Stuck selfie stick
+            </button>
+            <button type="button" class="secondary-button" data-example="battery">
+              Swollen laptop battery
+            </button>
+          </div>
 
           <button type="submit">Analyze</button>
         </form>
@@ -77,6 +87,39 @@
             <h3>Prevention tip</h3>
             <p id="prevention">Prevention guidance will appear here.</p>
           </div>
+
+          <section class="resources-section" aria-labelledby="resources-title">
+            <div class="section-heading">
+              <div>
+                <p class="eyebrow">Local support</p>
+                <h3 id="resources-title">Find local help</h3>
+              </div>
+              <p class="data-note">
+                MVP demo data only. OpenStreetMap-based import is planned after
+                the hackathon MVP.
+              </p>
+            </div>
+
+            <div class="filters" aria-label="Resource filters">
+              <label for="resource-type">Resource type</label>
+              <select id="resource-type"></select>
+
+              <label for="resource-category">Item category</label>
+              <select id="resource-category">
+                <option value="all">Use diagnosis category</option>
+                <option value="electrical">Electrical device</option>
+                <option value="furniture">Furniture</option>
+                <option value="tool">Tool or accessory</option>
+                <option value="household">Household item</option>
+                <option value="unknown">Not sure</option>
+              </select>
+            </div>
+
+            <p id="help-summary" class="help-summary">
+              Analyze a problem to see matching local repair resources.
+            </p>
+            <div class="resources-grid" id="resources"></div>
+          </section>
         </section>
       </section>
     </main>

@@ -21,6 +21,7 @@ export function analyzeProblem({ category, description }) {
     riskLevel,
     riskReasons: risks.map((risk) => risk.label),
     actions: getActions(riskLevel),
+    helpNeeded: getHelpNeeded(riskLevel),
     recommendedNextStep: recommendNextStep({ category, failureType, riskLevel }),
     preventionTip: categoryTips[category] || categoryTips.unknown,
   };
@@ -66,6 +67,18 @@ function getActions(riskLevel) {
   }
 
   return actionGroups;
+}
+
+function getHelpNeeded(riskLevel) {
+  if (riskLevel === "high") {
+    return "Professional help or safe disposal";
+  }
+
+  if (riskLevel === "caution") {
+    return "Guidance, careful inspection, or professional help";
+  }
+
+  return "Community support, tool access, guidance, or repair service";
 }
 
 function recommendNextStep({ category, failureType, riskLevel }) {
