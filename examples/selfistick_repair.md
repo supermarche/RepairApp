@@ -15,6 +15,9 @@ Wenn du mir ein Foto des Schadens hochlädst, kann ich genauer einschätzen:
 ob eine Reparatur sinnvoll ist,
 welche Methode geeignet wäre,
 und ob die Stabilität danach noch ausreichend für dein Smartphone wäre.
+
+
+
 Die Teleskopstange aus Metall ist direkt unterhalb der Feststellschraube gebrochen. Könnte man irgendetwas 3D drucken, was man auf die Stange draufstülpen und mit der Schraube verbinden könnte, so dass die Stange wieder stabil zusammenhält?  
 
 Ja, das ist grundsätzlich möglich – und oft sogar die sinnvollste Reparatur für genau diese Art von Bruch.
@@ -85,4 +88,80 @@ oder du Spaß am Basteln hast.
 Technisch halte ich eine verschraubte Klemmhülse mit innenliegendem Alurohr für durchaus erfolgversprechend.
 
 Wenn du ein Foto der Bruchstelle hochlädst (am besten mit einem Lineal daneben), kann ich dir sogar eine konkrete Konstruktion skizzieren oder die Maße für ein druckbares Teil abschätzen.
+
+
+
+Ich habe keine Ahnung von PLA, PETG, ASA/ABS, Nylon(PA), kann ich mir lokal von jemanden helfen lassen oder gibt es Lösungen von der Stange, die ohne 3D-Druck funktionieren?
+
+Ja, definitiv. Für einen Selfiestick würde ich sogar zuerst nach einfachen mechanischen Lösungen ohne 3D-Druck schauen.
+
+Mögliche Reparaturen von der Stange:
+
+1. Schrumpfschlauch + Epoxidkleber
+
+Wenn die Bruchstelle sauber ist und die beiden Teile noch gut ineinander passen:
+
+2-Komponenten-Epoxidkleber (z. B. UHU Endfest 300)
+mehrere Lagen Schrumpfschlauch darüber
+
+Das kostet nur wenige Euro. Die Stabilität ist allerdings begrenzt.
+
+2. Rohrverbinder aus dem Modellbau
+
+In Modellbaugeschäften oder Baumärkten gibt es:
+
+Messingrohre
+Aluminiumrohre
+Carbonrohre
+
+Oft findet man ein Rohr, das genau in die Teleskopstange hineinpasst.
+
+Vorgehen:
+
+kurzes Rohrstück (3–5 cm) als "Schiene" einsetzen
+mit Epoxidkleber verkleben
+eventuell außen zusätzlich mit Kabelbindern oder Schrumpfschlauch sichern
+
+Das ist häufig stabiler als ein gedrucktes Teil.
+
+3. Kleine Schlauchschelle
+
+Wenn die Bruchstelle nahe am Ende sitzt:
+
+Edelstahl-Schlauchschelle
+eventuell dünnes Gummi darunter
+
+Nicht schön, aber funktional.
+
+4. Reparatur-Café
+
+In Leipzig gibt es mehrere Reparatur-Cafés. Dort sitzen oft Leute mit:
+
+3D-Druckern
+Werkzeug
+Erfahrung mit solchen Improvisationsreparaturen
+
+Die schauen sich das meist kostenlos oder gegen eine kleine Spende an.
+
+5. Lokale Makerspaces
+
+Leipzig hat mehrere Makerspaces/FabLabs. Dort findest du Leute, die:
+
+das Teil vermessen,
+eine Hülse konstruieren,
+sie direkt ausdrucken.
+
+Das kostet oft nur wenige Euro Material.
+
+Was ich an deiner Stelle tun würde
+
+Wenn der Selfiestick nicht besonders teuer war:
+
+Foto machen.
+Schauen, ob ein kleines Aluminiumrohr als Innenverstärkung passt.
+Mit Epoxidkleber reparieren.
+
+Das ist meist die stabilste und günstigste Lösung.
+
+Falls du ein Foto hochlädst, kann ich dir sogar sagen, welchen Rohrdurchmesser du ungefähr brauchst und ob eine einfache Baumarkt-Lösung ausreicht oder ob ein 3D-gedrucktes Teil tatsächlich sinnvoll wäre.
 ```

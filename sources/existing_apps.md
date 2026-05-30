@@ -29,6 +29,8 @@
 * where can I get manuals / construction plan?
   * Open Access manuals
   * [Repair Wiki](https://repair.wiki/w/Main_Page#gsc.tab=0)
+  * Forum entries
+  * Link to YouTube-Step-by-Step-Tutorials
 
 ## Existing funding programs
 * Sachsen [Reparaturbonus](https://www.sab.sachsen.de/reparaturbonus)
