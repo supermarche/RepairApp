@@ -10,6 +10,13 @@ RepairApp is a small hackathon MVP based on the documented "Problemanalyse" work
 - Preserve the existing Markdown research and planning documents.
 - Use deterministic local rules and mock data for the first demo.
 
+## OpenStreetMap Demo Exception
+
+- External APIs and map libraries remain disallowed by default.
+- For the RepairApp hackathon demo, Leaflet, OpenStreetMap tiles, and a single bounded user-triggered Overpass API query are allowed.
+- The local deterministic demo dataset must remain available as a fallback.
+- Do not add geolocation, Nominatim, a backend, a database, a framework, a package manager, or a build system.
+
 ## Problemanalyse Workflow
 
 Use the existing Markdown documents as the source of truth for the demo flow:

@@ -149,6 +149,11 @@ button:hover {
   background: var(--accent-dark);
 }
 
+button:disabled {
+  cursor: wait;
+  opacity: 0.62;
+}
+
 .example-row {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -259,6 +264,26 @@ button:hover {
   background: #fffdf8;
 }
 
+.map-panel {
+  display: grid;
+  gap: 8px;
+}
+
+.resource-map {
+  min-height: 320px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  overflow: hidden;
+  background: #eef2f6;
+}
+
+.osm-note,
+.osm-status {
+  margin-bottom: 0;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
 .section-heading {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(220px, 320px);
@@ -289,6 +314,17 @@ button:hover {
   grid-template-columns: auto minmax(180px, 1fr) auto minmax(180px, 1fr);
   gap: 10px;
   align-items: center;
+}
+
+.live-row {
+  display: grid;
+  grid-template-columns: minmax(180px, 240px) 1fr;
+  gap: 12px;
+  align-items: center;
+}
+
+.live-button {
+  height: 100%;
 }
 
 .filters label {
@@ -337,8 +373,13 @@ button:hover {
   .resources-grid,
   .section-heading,
   .filters,
+  .live-row,
   .example-row {
     grid-template-columns: 1fr;
+  }
+
+  .resource-map {
+    min-height: 260px;
   }
 
   .result-header {

@@ -1,5 +1,11 @@
 import { analyzeProblem } from "./analyzer.js";
-import { matchResources, resourceTypes, typeLabel } from "./resources.js";
+import {
+  getOsmResourceCount,
+  loadOsmResources,
+  matchResources,
+  resourceTypes,
+  typeLabel,
+} from "./resources.js";
 
 const form = document.querySelector("#repair-form");
 const category = document.querySelector("#category");
@@ -17,8 +23,15 @@ const resourceType = document.querySelector("#resource-type");
 const resourceCategory = document.querySelector("#resource-category");
 const helpSummary = document.querySelector("#help-summary");
 const resources = document.querySelector("#resources");
+const mapElement = document.querySelector("#resource-map");
+const loadOsmButton = document.querySelector("#load-osm");
+const osmStatus = document.querySelector("#osm-status");
 
 let latestResult = null;
+let latestMatches = [];
+let map = null;
+let markerLayer = null;
+let isOsmLoading = false;
 
 resourceType.replaceChildren(
   ...resourceTypes.map((type) => {
@@ -44,6 +57,7 @@ form.addEventListener("submit", (event) => {
 
 resourceType.addEventListener("change", renderResources);
 resourceCategory.addEventListener("change", renderResources);
+loadOsmButton.addEventListener("click", handleLoadOsm);
 
 exampleButtons.forEach((button) => {
   button.addEventListener("click", () => {
@@ -73,8 +87,9 @@ function renderResult(result) {
 
   if (result.riskLevel === "high") {
     safetyWarning.classList.remove("hidden");
-    safetyWarning.textContent =
-      "Safety warning: this description contains high-risk signals. Avoid DIY repair and prioritize stopping use, professional help, replacement, or recycling.";
+    safetyWarning.textContent = hasBatteryRisk(result)
+      ? "Safety warning: stop using the device, do not attempt DIY disassembly, and confirm that any selected recycling location accepts lithium-ion batteries or electronic waste before visiting."
+      : "Safety warning: this description contains high-risk signals. Avoid DIY repair and prioritize stopping use, professional help, replacement, or recycling.";
   } else if (result.riskLevel === "caution") {
     safetyWarning.classList.remove("hidden");
     safetyWarning.textContent =
@@ -108,6 +123,10 @@ function renderResult(result) {
   prevention.textContent = result.preventionTip;
 }
 
+function hasBatteryRisk(result) {
+  return result.riskReasons.some((reason) => reason.toLowerCase().includes("battery"));
+}
+
 function renderResources() {
   if (!latestResult) {
     return;
@@ -119,8 +138,10 @@ function renderResources() {
     typeFilter: resourceType.value,
     categoryFilter: resourceCategory.value,
   });
+  latestMatches = matches;
 
-  helpSummary.textContent = `${latestResult.helpNeeded}. Showing ${matches.length} matching local demo resources, prioritized for ${latestResult.riskLevel} risk.`;
+  helpSummary.textContent = `${latestResult.helpNeeded}. Showing ${matches.length} matching resources, prioritized for ${latestResult.riskLevel} risk.`;
+  updateMapMarkers(matches);
 
   resources.replaceChildren(
     ...matches.map((resource) => {
@@ -155,6 +176,92 @@ function renderResources() {
   );
 }
 
+async function handleLoadOsm() {
+  if (isOsmLoading) {
+    return;
+  }
+
+  isOsmLoading = true;
+  loadOsmButton.disabled = true;
+  osmStatus.textContent = "Loading one bounded Overpass query for the Gorlitz area...";
+
+  try {
+    const before = getOsmResourceCount();
+    const loaded = await loadOsmResources();
+    const added = loaded.length - before;
+    osmStatus.textContent = added > 0
+      ? `Loaded ${added} OpenStreetMap resources. Demo data remains available.`
+      : "No new OpenStreetMap resources found for this query. Showing fallback demo data.";
+    renderResources();
+  } catch (error) {
+    osmStatus.textContent = `Live OSM request failed. Showing fallback demo data. ${error.message}`;
+    renderResources();
+  } finally {
+    isOsmLoading = false;
+    loadOsmButton.disabled = false;
+  }
+}
+
+function initMap() {
+  if (!window.L || !mapElement) {
+    osmStatus.textContent =
+      "Leaflet could not be loaded. The list remains available as fallback.";
+    return;
+  }
+
+  map = window.L.map(mapElement, {
+    scrollWheelZoom: false,
+  }).setView([51.152, 14.988], 13);
+
+  window.L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+    maxZoom: 19,
+    attribution: "&copy; OpenStreetMap contributors",
+  }).addTo(map);
+
+  markerLayer = window.L.layerGroup().addTo(map);
+}
+
+function updateMapMarkers(matches) {
+  if (!map || !markerLayer) {
+    return;
+  }
+
+  markerLayer.clearLayers();
+
+  const markers = matches
+    .filter((resource) => Number.isFinite(resource.lat) && Number.isFinite(resource.lng))
+    .map((resource) => {
+      const marker = window.L.marker([resource.lat, resource.lng]);
+      marker.bindPopup(
+        `<strong>${escapeHtml(resource.name)}</strong><br>` +
+          `${escapeHtml(typeLabel(resource.type))}<br>` +
+          `${escapeHtml(resource.location)}<br>` +
+          `${escapeHtml(resource.description)}<br>` +
+          `<span>${escapeHtml(resource.source)}</span>`,
+      );
+      marker.addTo(markerLayer);
+      return marker;
+    });
+
+  if (markers.length > 0) {
+    const group = window.L.featureGroup(markers);
+    map.fitBounds(group.getBounds().pad(0.18), {
+      maxZoom: 14,
+    });
+  } else {
+    map.setView([51.152, 14.988], 13);
+  }
+}
+
+function escapeHtml(value) {
+  return String(value)
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
+}
+
 function riskTitleText(level) {
   if (level === "high") {
     return "High safety risk detected";
@@ -166,3 +273,5 @@ function riskTitleText(level) {
 
   return "Low immediate safety risk";
 }
+
+initMap();

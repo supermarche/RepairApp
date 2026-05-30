@@ -4,6 +4,10 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>RepairApp MVP</title>
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    >
     <link rel="stylesheet" href="./styles.css">
   </head>
   <body>
@@ -95,8 +99,16 @@
                 <h3 id="resources-title">Find local help</h3>
               </div>
               <p class="data-note">
-                MVP demo data only. OpenStreetMap-based import is planned after
-                the hackathon MVP.
+                Local demo data is always available. Optional OpenStreetMap
+                results can be loaded once for the Görlitz demo area.
+              </p>
+            </div>
+
+            <div class="map-panel">
+              <div id="resource-map" class="resource-map" aria-label="Map of matching repair resources"></div>
+              <p class="osm-note">
+                Map tiles and optional live resources use OpenStreetMap data for
+                this hackathon demo. Local demo data remains the fallback.
               </p>
             </div>
 
@@ -115,6 +127,15 @@
               </select>
             </div>
 
+            <div class="live-row">
+              <button type="button" class="secondary-button live-button" id="load-osm">
+                Load live OSM resources
+              </button>
+              <p id="osm-status" class="osm-status">
+                Live data is optional and never loaded automatically.
+              </p>
+            </div>
+
             <p id="help-summary" class="help-summary">
               Analyze a problem to see matching local repair resources.
             </p>
@@ -124,6 +145,7 @@
       </section>
     </main>
 
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script type="module" src="./js/app.js"></script>
   </body>
 </html>
