@@ -4,7 +4,7 @@
 > §2 Edge-Cases, §3 Architektur-Lücken, §5 priorisierte Roadmap), fachlich verankert in
 > `docs/konzept.adoc` (Decision-Log) und `docs/runtime-roles/`.
 
-**Next Available ID:** PROJ-43
+**Next Available ID:** PROJ-44
 
 **Status-Legende:** Planned · In Progress · In Review · Done
 
@@ -110,10 +110,12 @@
 | PROJ-40 | 🐞 Orchestrator-Robustheit bei API-Fehlern (`ai_error` statt Absturz) | `lotse` | D7/D19 | Planned | PROJ-35, 9, 28/29 |
 | PROJ-41 | ✨ Kontext-Verdichtung & Token-Budget | `lotse`/Querschnitt | D19/D7 | Planned | PROJ-35, 32, 9, 28 |
 | PROJ-42 | ✨ Ehrliche Degradations-Signalisierung bei Medien/Tools | Querschnitt | D3 | Planned | PROJ-39, 34, 25, 31 |
+| PROJ-43 | ✨ Beobachtbarkeit der Orchestrierung (Rollenwechsel & Tool-Calls im Log/Protokoll) | Betrieb/Querschnitt | — | Planned | PROJ-35, 32, 28, 29, 34 |
 
 > **Empfohlene Reihenfolge Stufe 5:** PROJ-39 (kritischer Bug) zuerst, dann PROJ-40
 > (Robustheit) und PROJ-42 (baut auf 39 auf) parallel, PROJ-41 (Verdichtung) als
-> eigenständige Optimierung danach.
+> eigenständige Optimierung danach. PROJ-43 (Beobachtbarkeit) jederzeit unabhängig,
+> erleichtert die Verifikation der übrigen Punkte.
 
 ## Empfohlene Build-Reihenfolge
 

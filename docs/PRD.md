@@ -79,13 +79,14 @@ Priorität spiegelt die Stufen aus `docs/funktionsabgleich.md` §5 wider:
 | P0 | [PROJ-40 🐞 Orchestrator-Robustheit bei API-Fehlern](../features/PROJ-40-orchestrator-api-fehler-robustheit.md) | `lotse` · D7/D19 | Planned |
 | P1 | [PROJ-41 ✨ Kontext-Verdichtung & Token-Budget](../features/PROJ-41-kontext-verdichtung.md) | `lotse`/Querschnitt · D19/D7 | Planned |
 | P1 | [PROJ-42 ✨ Ehrliche Degradations-Signalisierung](../features/PROJ-42-ehrliche-degradation-medien.md) | Querschnitt · D3 | Planned |
+| P1 | [PROJ-43 ✨ Beobachtbarkeit der Orchestrierung](../features/PROJ-43-orchestrierung-beobachtbarkeit.md) | Betrieb/Querschnitt | Planned |
 
 > **P3 = Stufe 4 (Architektur-Umbau):** LLM-Orchestrierung über `runtime-roles`
 > (OpenAI-only). Ersetzt den Single-Shot-Diagnosepfad durch einen orchestrierten Chat-Flow.
 > Specs/Plan unter `docs/superpowers/`.
 >
-> **Stufe 5 (Orchestrierungs-Härtung):** PROJ-39…42 — Nachträge aus der Betriebs-Analyse
-> vom 2026-05-31. Zwei Bugs (PROJ-39 kritisch, PROJ-40) + zwei Verbesserungen (PROJ-41/42)
+> **Stufe 5 (Orchestrierungs-Härtung):** PROJ-39…43 — Nachträge aus der Betriebs-Analyse
+> vom 2026-05-31. Zwei Bugs (PROJ-39 kritisch, PROJ-40) + drei Verbesserungen (PROJ-41/42/43)
 > am Stufe-4-Flow. Empfohlen: PROJ-39 zuerst.
 
 ## Erfolgsmetriken
