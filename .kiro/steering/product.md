@@ -56,9 +56,9 @@ Do not present assumptions as confirmed diagnoses.
 
 ## Current product goal
 
-Replace the Görlitz-only live OSM lookup with Germany-wide location search while preserving the existing taxonomy, normalization logic, and safety behavior.
+The browser-level Germany-wide live OSM lookup is the Phase 1 prerequisite. The next reviewed product stage is a small backend adapter after the browser-level acceptance checks pass.
 
-Germany-wide means bounded searches around a submitted German city or postal code. It does not mean preloading or querying all of Germany.
+The adapter should move public-service integration behind a RepairApp API while preserving bounded searches around submitted German cities or postal codes, the existing taxonomy, OSM normalization logic, visible live-data status, attribution, and safety behavior.
 
 ## Product boundaries
 
@@ -66,4 +66,6 @@ Do not silently replace unavailable live results with fixtures or stale data.
 
 Fixture mode is allowed only for tests, controlled development scenarios, and clearly marked demonstrations.
 
-AWS infrastructure, a backend adapter, MCP integrations, and autonomous-agent workflows belong to later reviewed phases. They must not be added merely to enlarge the architecture.
+The backend adapter is the next reviewed stage after the browser-level baseline. Keep it small and do not add a database unless a measured need exists.
+
+AWS infrastructure, MCP integrations, and autonomous-agent workflows belong to later reviewed phases. They must not be added merely to enlarge the architecture.

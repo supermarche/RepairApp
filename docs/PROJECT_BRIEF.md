@@ -348,7 +348,7 @@ Document browser-only limitations:
 
 ## 8. Backend-adapter baseline
 
-After the browser-level live path works, introduce a small backend adapter.
+Phase 2 is the next implementation stage after the browser-level live path works and the Phase 1 acceptance checks pass. Introduce a small backend adapter before AWS infrastructure or broader agent integrations.
 
 Target flow:
 
@@ -646,9 +646,11 @@ Verify manually with:
 
 ### Phase 2 — Small backend adapter
 
-Add a minimal backend adapter only after the browser-level live path works.
+This is the next implementation stage after the browser-level live path works and the Phase 1 acceptance checks pass.
 
-This phase is required before claiming meaningful operational control over the external dependency.
+Add a minimal backend adapter before AWS infrastructure or broader agent integrations. This phase is required before claiming meaningful operational control over the external dependency.
+
+Preserve the current taxonomy, OSM normalization logic, visible dependency states, attribution, and safety behavior.
 
 Measure:
 
@@ -811,21 +813,25 @@ Do not expand scope without a concrete reason.
 
 ## 18. Immediate task
 
-Transform the existing Görlitz-only OSM integration into a live Germany-wide location-search workflow while preserving:
+Prepare the Phase 2 small backend adapter after verifying the browser-level Germany-wide live OSM baseline.
+
+Preserve:
 
 - the current taxonomy,
 - the current OSM normalization logic,
+- the current visible dependency states and attribution,
 - the current safety behavior.
 
-AWS infrastructure is part of the later roadmap but outside the current task.
+Keep the adapter small. Do not add AWS infrastructure or a database as part of this task unless a measured need and a reviewed requirement justify them.
 
 First:
 
-1. inspect the repository,
-2. identify the exact hardcoded Görlitz logic,
-3. list the smallest files to modify,
-4. propose the implementation plan,
-5. define acceptance criteria,
-6. define manual checks,
-7. identify risks and non-goals,
-8. stop before editing unless implementation is explicitly requested.
+1. inspect the repository and the current browser-to-provider request flow,
+2. verify the Phase 1 acceptance checks and report any remaining browser-level gap,
+3. identify the smallest useful RepairApp API boundary,
+4. list the smallest files to modify,
+5. propose the backend-adapter implementation plan,
+6. define acceptance criteria for validation, cache behavior, timeouts, rate limiting, error mapping, structured logs, dependency-level measurements, and readiness,
+7. define regression checks for Görlitz, Dresden, Berlin, a valid German postal code, invalid and outside-Germany locations, empty results, timeout, HTTP 429, malformed response, and missing configuration,
+8. identify risks and non-goals,
+9. stop before editing unless implementation is explicitly requested.

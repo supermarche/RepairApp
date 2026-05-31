@@ -26,18 +26,22 @@ The current application code lives under `app/`. Inspect the actual files before
 
 ## Current delivery phase
 
-The current priority is Phase 0 and Phase 1:
+The browser-level Germany-wide live OSM baseline is the Phase 1 prerequisite.
 
-1. inspect the existing repository,
-2. identify the exact hardcoded Görlitz-only OSM logic,
-3. identify the existing taxonomy, normalization flow, UI states, and fallback behavior,
-4. propose the smallest reversible plan,
-5. transform the local OSM integration into live Germany-wide location search,
-6. preserve the current taxonomy, normalization logic, and safety behavior.
+The next reviewed implementation stage is Phase 2 — a small backend adapter. Start it only after the browser-level live path has passed the Phase 1 acceptance checks.
 
-AWS infrastructure is part of the later roadmap, but it is outside the current Phase 0 and Phase 1 scope.
+For Phase 2:
 
-Do not add AWS resources, Terraform, IAM changes, deployment configuration, paid services, or a backend solely to enlarge the architecture unless the user explicitly starts the corresponding roadmap phase.
+1. inspect the current browser-to-provider request flow,
+2. identify the smallest useful RepairApp API boundary,
+3. route browser location-search requests through the RepairApp API,
+4. centralize validation, cache lookup, timeout handling, rate limiting, provider configuration, and consistent error mapping,
+5. add structured integration logs, dependency-level measurements, and readiness behavior,
+6. preserve the current taxonomy, OSM normalization logic, visible live-data states, attribution, and safety behavior.
+
+AWS infrastructure remains outside the current scope.
+
+Do not add AWS resources, Terraform, IAM changes, deployment configuration, paid services, or a database solely to enlarge the architecture.
 
 ## Stable product constraints
 
@@ -104,7 +108,7 @@ Avoid unrelated refactors.
 
 ## Verification baseline
 
-For the Germany-wide OSM baseline, include manual checks for:
+Before Phase 2 implementation, rerun the Germany-wide browser-level baseline checks as a regression gate:
 
 - Görlitz,
 - Dresden,
@@ -118,7 +122,7 @@ For the Germany-wide OSM baseline, include manual checks for:
 - malformed-response simulation,
 - missing-configuration simulation.
 
-Add automated checks where they provide immediate value, especially for taxonomy normalization and dependency-state mapping.
+Add automated checks where they provide immediate value, especially for taxonomy normalization, dependency-state mapping, cache behavior, and adapter error mapping.
 
 If canonical run, test, lint, or build commands are not documented yet, inspect the repository and report that gap. Do not invent commands.
 
@@ -186,6 +190,8 @@ Never store secrets in the repository. Use environment variables, `.env.example`
 
 ## Immediate task
 
-Inspect the repository and report the smallest reversible plan for replacing the Görlitz-only OSM integration with live Germany-wide location search.
+Inspect the browser-level Germany-wide live OSM baseline and report the smallest reversible plan for adding the Phase 2 small backend adapter.
+
+Preserve the current taxonomy, OSM normalization logic, visible live-data states, attribution, and safety behavior. Keep AWS infrastructure outside this task.
 
 Stop before editing unless implementation is explicitly requested.
