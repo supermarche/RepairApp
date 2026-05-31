@@ -312,7 +312,7 @@ function initMap() {
     scrollWheelZoom: false,
   }).setView([51.152, 14.988], 13);
 
-  window.L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+  window.L.tileLayer(window.REPAIR_APP_CONFIG.tileLayerUrl, {
     maxZoom: 19,
     attribution: "&copy; OpenStreetMap contributors",
   }).addTo(map);
