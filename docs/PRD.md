@@ -81,6 +81,7 @@ Priorität spiegelt die Stufen aus `docs/funktionsabgleich.md` §5 wider:
 | P1 | [PROJ-42 ✨ Ehrliche Degradations-Signalisierung](../features/PROJ-42-ehrliche-degradation-medien.md) | Querschnitt · D3 | Planned |
 | P1 | [PROJ-43 ✨ Beobachtbarkeit der Orchestrierung](../features/PROJ-43-orchestrierung-beobachtbarkeit.md) | Betrieb/Querschnitt | Planned |
 | P1 | [PROJ-44 Service-Point-Übergabe-Report (PDF- & Text-Download)](../features/PROJ-44-service-point-report-download.md) | `protokoll`/`vermittlung` · D14/D3/D23 | Planned |
+| P1 | [PROJ-46 Feedback-Button (Prozess-Anmerkungen des Nutzers)](../features/PROJ-46-feedback-button.md) | Querschnitt · D3/D7 | Planned |
 
 > **P3 = Stufe 4 (Architektur-Umbau):** LLM-Orchestrierung über `runtime-roles`
 > (OpenAI-only). Ersetzt den Single-Shot-Diagnosepfad durch einen orchestrierten Chat-Flow.
@@ -93,6 +94,10 @@ Priorität spiegelt die Stufen aus `docs/funktionsabgleich.md` §5 wider:
 > **Stufe 6 (Übergabe & Output):** PROJ-44 — Service-Point-Übergabe-Report. Erweitert den
 > Export (PROJ-10) um einen server-seitig erzeugten PDF-Download mit zielgruppen-spezifischen
 > Report-Varianten (Annahmestelle/Werkstatt) plus Klartext/Markdown.
+>
+> **Stufe 8 (Nutzer-Feedback):** PROJ-46 — Feedback-Button. Niederschwellige Freitext-Anmerkung
+> zum laufenden Vorgang; lokal gespeichert (kein externer Versand), zweifach abgelegt (eigene
+> Persistenz + Hinweis im Vorgangs-Protokoll).
 
 ## Erfolgsmetriken
 

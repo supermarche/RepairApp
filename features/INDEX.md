@@ -4,7 +4,7 @@
 > §2 Edge-Cases, §3 Architektur-Lücken, §5 priorisierte Roadmap), fachlich verankert in
 > `docs/konzept.adoc` (Decision-Log) und `docs/runtime-roles/`.
 
-**Next Available ID:** PROJ-46
+**Next Available ID:** PROJ-47
 
 **Status-Legende:** Planned · In Progress · In Review · Done
 
@@ -136,6 +136,16 @@
 | ID | Feature | Rolle | D-Anker | Status | Abhängigkeiten |
 |---|---|---|---|---|---|
 | PROJ-45 | Vorab-Import von Reparatur-Anbietern (OSM + reparatur-initiativen.de) | `vermittlung`/Betrieb | — | Architected | PROJ-11, 30 |
+
+## Stufe 8 — Nutzer-Feedback
+
+> Niederschwelliger Kanal, über den der Anwender während eines laufenden Vorgangs eine
+> Freitext-Anmerkung zum aktuellen Prozess abgeben kann. Lokal gespeichert (kein externer
+> Versand), zweifach abgelegt (eigene Persistenz + Hinweis im Vorgangs-Protokoll).
+
+| ID | Feature | Rolle | D-Anker | Status | Abhängigkeiten |
+|---|---|---|---|---|---|
+| PROJ-46 | Feedback-Button (Prozess-Anmerkungen des Nutzers) | Querschnitt | D3/D7 | Planned | PROJ-9, 28 |
 
 ## Empfohlene Build-Reihenfolge
 
