@@ -82,6 +82,7 @@ Priorität spiegelt die Stufen aus `docs/funktionsabgleich.md` §5 wider:
 | P1 | [PROJ-43 ✨ Beobachtbarkeit der Orchestrierung](../features/PROJ-43-orchestrierung-beobachtbarkeit.md) | Betrieb/Querschnitt | Planned |
 | P1 | [PROJ-44 Service-Point-Übergabe-Report (PDF- & Text-Download)](../features/PROJ-44-service-point-report-download.md) | `protokoll`/`vermittlung` · D14/D3/D23 | Planned |
 | P1 | [PROJ-46 Feedback-Button (Prozess-Anmerkungen des Nutzers)](../features/PROJ-46-feedback-button.md) | Querschnitt · D3/D7 | Planned |
+| P1 | [PROJ-47 Spracheingabe im Chat (Diktat per OpenAI-Whisper)](../features/PROJ-47-spracheingabe-chat.md) | `aufnahme`/Querschnitt · D9 | Planned |
 
 > **P3 = Stufe 4 (Architektur-Umbau):** LLM-Orchestrierung über `runtime-roles`
 > (OpenAI-only). Ersetzt den Single-Shot-Diagnosepfad durch einen orchestrierten Chat-Flow.
@@ -98,6 +99,11 @@ Priorität spiegelt die Stufen aus `docs/funktionsabgleich.md` §5 wider:
 > **Stufe 8 (Nutzer-Feedback):** PROJ-46 — Feedback-Button. Niederschwellige Freitext-Anmerkung
 > zum laufenden Vorgang; lokal gespeichert (kein externer Versand), zweifach abgelegt (eigene
 > Persistenz + Hinweis im Vorgangs-Protokoll).
+>
+> **Stufe 9 (Spracheingabe):** PROJ-47 — Diktat in der laufenden Chat-Eingabezeile,
+> transkribiert über die OpenAI-API (Whisper). Bindet den vorhandenen, bislang ungenutzten
+> Endpunkt `POST /api/transkription` (PROJ-27) ans Frontend an; editierbares Transkript,
+> Wiederholen/Ergänzen, browserübergreifend (auch Firefox).
 
 ## Erfolgsmetriken
 

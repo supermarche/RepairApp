@@ -4,7 +4,7 @@
 > §2 Edge-Cases, §3 Architektur-Lücken, §5 priorisierte Roadmap), fachlich verankert in
 > `docs/konzept.adoc` (Decision-Log) und `docs/runtime-roles/`.
 
-**Next Available ID:** PROJ-47
+**Next Available ID:** PROJ-48
 
 **Status-Legende:** Planned · In Progress · In Review · Done
 
@@ -146,6 +146,17 @@
 | ID | Feature | Rolle | D-Anker | Status | Abhängigkeiten |
 |---|---|---|---|---|---|
 | PROJ-46 | Feedback-Button (Prozess-Anmerkungen des Nutzers) | Querschnitt | D3/D7 | Planned | PROJ-9, 28 |
+
+## Stufe 9 — Spracheingabe im Chat
+
+> Diktat in der laufenden Chat-Eingabezeile, transkribiert über die OpenAI-API (Whisper).
+> Bindet den bereits vorhandenen, bislang ungenutzten Endpunkt `POST /api/transkription`
+> (PROJ-27) erstmals ans Frontend an und macht Spracheingabe browserübergreifend (auch
+> Firefox), in jedem Chat-Turn, mit editierbarem Transkript + Wiederholen/Ergänzen.
+
+| ID | Feature | Rolle | D-Anker | Status | Abhängigkeiten |
+|---|---|---|---|---|---|
+| PROJ-47 | Spracheingabe im Chat (Diktat per OpenAI-Whisper) | `aufnahme`/Querschnitt | D9 | Planned | PROJ-37, 27, 30 |
 
 ## Empfohlene Build-Reihenfolge
 
