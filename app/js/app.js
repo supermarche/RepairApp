@@ -193,6 +193,15 @@ async function handleLocationSearch(event) {
   clearResourceDisplay();
   setLocationStatus("loading", "Resolving location and loading live OpenStreetMap resources...");
 
+  if (!locationQuery.value.trim()) {
+    showLocalFallback();
+    setLocationStatus(
+      "invalid_location",
+      "Enter a German city or postcode. Showing local Görlitz demo fallback.",
+    );
+    return;
+  }
+
   try {
     const resolvedLocation = await resolveGermanLocation(locationQuery.value);
 
@@ -210,7 +219,7 @@ async function handleLocationSearch(event) {
     if (loaded.length === 0) {
       showLocalFallback();
       setLocationStatus(
-        "empty",
+        "no_results",
         `No live OpenStreetMap resources found near ${resolvedLocation.displayName}. Showing local Görlitz demo fallback.`,
       );
       return;
@@ -231,7 +240,7 @@ async function handleLocationSearch(event) {
 
     if (error.code === "no_acceptable_location") {
       setLocationStatus(
-        "empty",
+        "invalid_location",
         `${error.message} Showing local Görlitz demo fallback.`,
       );
       return;
