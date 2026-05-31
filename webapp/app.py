@@ -64,6 +64,7 @@ from repair import (
     entsorgung,
     ersatzteile,
     export,
+    feedback,
     foerderung,
     logconf,
     lotse,
@@ -388,6 +389,71 @@ def api_chat():
                     "abgebrochen": result["abgebrochen"]},
                    ensure_ascii=False),
         mimetype="application/json")
+
+
+@app.post("/api/feedback")
+def api_feedback():
+    """PROJ-46 — Nutzer-Feedback zu einem laufenden Vorgang speichern.
+
+    Body: {"vorgang_id": str, "text": str, "screen"?: str, "letzte_antwort"?: str}
+    Erfolg 200: {"ok": true, "feedback_id": "<id>"}
+    Fehler {error, code}:
+      403 disabled   — Feedback-Funktion deaktiviert (FEEDBACK_ENABLED=0)
+      400 empty      — text leer oder nur Whitespace
+      400 too_long   — len(text.encode("utf-8")) > MAX_FEEDBACK_BYTES
+      404 no_vorgang — vorgang_id unbekannt
+
+    Prüfreihenfolge: disabled → empty → too_long → no_vorgang.
+    Begründung: Plausibilitätsfehler (leer/zu lang) können ohne DB-Zugriff
+    erkannt werden → Fehlermeldung schneller, DB-Last minimal. no_vorgang
+    letzte Prüfung, weil sie einen DB-Zugriff erfordert.
+    """
+    # 1) Feature-Schalter
+    if not config.feedback_enabled():
+        return _json_error("Feedback-Funktion ist deaktiviert.", "disabled", 403)
+
+    body = request.get_json(silent=True)
+    if not isinstance(body, dict):
+        body = {}
+    vid = str(body.get("vorgang_id") or "").strip()
+    text = str(body.get("text") or "")
+
+    # 2) Leer-Check (kein Whitespace-Feedback)
+    if not text.strip():
+        return _json_error("Feedback-Text darf nicht leer sein.", "empty", 400)
+
+    # 3) Längenbegrenzung (UTF-8-Bytes)
+    if len(text.encode("utf-8")) > config.max_feedback_bytes():
+        return _json_error(
+            f"Feedback-Text ist zu lang (maximal {config.max_feedback_bytes()} Bytes UTF-8).",
+            "too_long",
+            400,
+        )
+
+    # 4) Vorgang-Existenzprüfung
+    if not store.get_vorgang(vid):
+        return _json_error("Unbekannter Vorgang.", "no_vorgang", 404)
+
+    # Optionale Kontextfelder — defensiv als str, ggf. auf max_feedback_bytes kürzen
+    # (letzte_antwort kann eine vollständige KI-Antwort enthalten — byte-limit schützt vor
+    # exzessiv großen Einträgen).
+    max_b = config.max_feedback_bytes()
+    screen = str(body.get("screen") or "").strip() or None
+    letzte_antwort_raw = str(body.get("letzte_antwort") or "").strip()
+    if letzte_antwort_raw:
+        # Kürzen auf max_feedback_bytes (UTF-8), damit der Eintrag nicht aufbläht
+        enc = letzte_antwort_raw.encode("utf-8")
+        if len(enc) > max_b:
+            letzte_antwort_raw = enc[:max_b].decode("utf-8", errors="ignore")
+        letzte_antwort = letzte_antwort_raw or None
+    else:
+        letzte_antwort = None
+
+    result = feedback.speichere(vid, text, screen=screen, letzte_antwort=letzte_antwort)
+    return app.response_class(
+        json.dumps({"ok": True, "feedback_id": result["id"]}, ensure_ascii=False),
+        mimetype="application/json",
+    )
 
 
 @app.get("/api/vorgang/<vid>")

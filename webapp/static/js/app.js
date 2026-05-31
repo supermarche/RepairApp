@@ -470,6 +470,18 @@
       'chat.micDenied': 'Mikrofon-Zugriff verweigert — bitte in den Browser-Einstellungen freigeben.',
       'chat.micNothing': 'Nichts erkannt — bitte erneut versuchen oder Text eingeben.',
       'chat.micUnavailableNow': 'Spracheingabe gerade nicht verfügbar — bitte Text eingeben.',
+      // Feedback-Button (PROJ-46)
+      'feedback.open': 'Feedback geben',
+      'feedback.title': 'Anmerkung zum Prozess',
+      'feedback.intro': 'Was war hilfreich, unverständlich oder fehlt noch? Deine Anmerkung hilft, die App zu verbessern.',
+      'feedback.placeholder': 'z. B. „Die letzte Frage war unklar …"',
+      'feedback.send': 'Senden',
+      'feedback.cancel': 'Schließen',
+      'feedback.thanks': 'Danke für dein Feedback!',
+      'feedback.error': 'Feedback konnte nicht gesendet werden — bitte erneut versuchen.',
+      'feedback.tooLong': 'Dein Feedback ist zu lang — bitte kürzen.',
+      'feedback.empty': 'Bitte gib einen Text ein.',
+      'feedback.disabled': 'Feedback ist derzeit deaktiviert.',
     },
     en: {
       // Navigation / General
@@ -928,6 +940,18 @@
       'chat.micDenied': 'Microphone access denied — please allow it in your browser settings.',
       'chat.micNothing': 'Nothing recognised — please try again or type.',
       'chat.micUnavailableNow': 'Voice input currently unavailable — please type instead.',
+      // Feedback button (PROJ-46)
+      'feedback.open': 'Give feedback',
+      'feedback.title': 'Process feedback',
+      'feedback.intro': 'What was helpful, unclear, or missing? Your note helps improve the app.',
+      'feedback.placeholder': 'e.g. "The last question was confusing …"',
+      'feedback.send': 'Send',
+      'feedback.cancel': 'Close',
+      'feedback.thanks': 'Thank you for your feedback!',
+      'feedback.error': 'Feedback could not be sent — please try again.',
+      'feedback.tooLong': 'Your feedback is too long — please shorten it.',
+      'feedback.empty': 'Please enter some text.',
+      'feedback.disabled': 'Feedback is currently disabled.',
     }
   };
 
@@ -1069,6 +1093,11 @@
     lastVoiceText: '',       // zuletzt per Sprache erfasster Anteil
     voiceUsed: false,        // mindestens eine Aufnahme abgeschlossen (Wiederholen/Ergänzen anzeigen)
     micPendingAction: null,  // 'start'|'append' — Aktion nach Consent-Accept ausführen
+    // PROJ-46: Feedback-Button
+    feedbackOpen: false,     // Feedback-Sheet sichtbar?
+    feedbackDraft: '',       // aktueller Feedback-Text (kein Re-Render bei Tippen)
+    feedbackSending: false,  // Sende-Request läuft
+    feedbackDone: false,     // Feedback erfolgreich abgesendet
   };
   window.RepairAppState = State; // Debug-Hook
 
@@ -1178,6 +1207,11 @@
     State.lastVoiceText = '';
     State.voiceUsed = false;
     State.micPendingAction = null;
+    // PROJ-46: Feedback-Zustand zurücksetzen
+    State.feedbackOpen = false;
+    State.feedbackDraft = '';
+    State.feedbackSending = false;
+    State.feedbackDone = false;
     try { history.replaceState(null, '', location.pathname); } catch (e) {}
     render();
     initVorgang().then(function () { render(); });
@@ -1519,6 +1553,87 @@
       .catch(function () { toast(t('toast.textFail')); });
   }
 
+  /* ===================== PROJ-46: FEEDBACK-HANDLER ===================== */
+
+  function onFeedbackOpen() {
+    if (!State.vorgangId) return;
+    State.feedbackOpen = true;
+    State.feedbackDone = false;
+    render();
+  }
+
+  function onFeedbackClose() {
+    State.feedbackOpen = false;
+    State.feedbackDraft = '';
+    State.feedbackDone = false;
+    render();
+  }
+
+  // Kein Re-Render bei Tippen (Fokus erhalten) — analog setDraft.
+  function onFeedbackDraft(v) { State.feedbackDraft = v; }
+
+  function onFeedbackSend() {
+    var text = (State.feedbackDraft || '').trim();
+    if (!text) { toast(t('feedback.empty')); return; }
+    if (State.feedbackSending) return; // Doppel-Submit verhindern
+    if (!State.vorgangId) { toast(t('feedback.error')); return; }
+
+    // letzte Assistenz-Antwort aus dem Verlauf holen
+    var letzteAntwort = '';
+    for (var i = State.verlauf.length - 1; i >= 0; i--) {
+      if (State.verlauf[i].rolle === 'assistant') {
+        letzteAntwort = State.verlauf[i].text || '';
+        break;
+      }
+    }
+    var screen = State.abgebrochen ? 'abgeschlossen' : 'chat';
+
+    State.feedbackSending = true;
+    render();
+
+    fetch('/api/feedback', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        vorgang_id: State.vorgangId,
+        text: State.feedbackDraft,
+        screen: screen,
+        letzte_antwort: letzteAntwort,
+      }),
+    })
+      .then(function (r) { return r.json().catch(function () { return { code: 'ai_error' }; }); })
+      .then(function (res) {
+        State.feedbackSending = false;
+        if (res && res.ok) {
+          State.feedbackDone = true;
+          State.feedbackDraft = '';
+          render();
+          // Sheet nach kurzem Moment schließen
+          setTimeout(function () {
+            State.feedbackOpen = false;
+            State.feedbackDone = false;
+            render();
+          }, 1800);
+          toast(t('feedback.thanks'));
+        } else {
+          // Fehler-Code auswerten
+          var code = (res && res.code) || 'error';
+          var msg;
+          if (code === 'too_long') msg = t('feedback.tooLong');
+          else if (code === 'empty') msg = t('feedback.empty');
+          else if (code === 'disabled') msg = t('feedback.disabled');
+          else msg = t('feedback.error');
+          toast(msg);
+          render();
+        }
+      })
+      .catch(function () {
+        State.feedbackSending = false;
+        toast(t('feedback.error'));
+        render();
+      });
+  }
+
   /* ===================== UI-SETTER ===================== */
   function setDraft(v) { State.draft = v; }   // kein Re-Render — Fokus erhalten
   function onSend() { sendeNachricht(State.draft); }
@@ -1564,6 +1679,15 @@
       onMicClick: onMicClick,
       onMicRetry: onMicRetry,
       onMicAppend: onMicAppend,
+      // PROJ-46: Feedback-Button
+      feedbackOpen: State.feedbackOpen,
+      feedbackDraft: State.feedbackDraft,
+      feedbackSending: State.feedbackSending,
+      feedbackDone: State.feedbackDone,
+      onFeedbackOpen: onFeedbackOpen,
+      onFeedbackClose: onFeedbackClose,
+      onFeedbackDraft: onFeedbackDraft,
+      onFeedbackSend: onFeedbackSend,
     });
     State.appEl.replaceChildren(screen);
     // Nach dem Rendern ans Ende scrollen + Eingabe fokussieren.

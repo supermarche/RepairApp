@@ -145,7 +145,7 @@
 
 | ID | Feature | Rolle | D-Anker | Status | Abhängigkeiten |
 |---|---|---|---|---|---|
-| PROJ-46 | Feedback-Button (Prozess-Anmerkungen des Nutzers) | Querschnitt | D3/D7 | Planned | PROJ-9, 28 |
+| PROJ-46 | Feedback-Button (Prozess-Anmerkungen des Nutzers) | Querschnitt | D3/D7 | In Review | PROJ-9, 28 |
 
 ## Stufe 9 — Spracheingabe im Chat
 
@@ -168,7 +168,7 @@
 
 | ID | Feature | Rolle | D-Anker | Status | Abhängigkeiten |
 |---|---|---|---|---|---|
-| PROJ-48 | Prompt-Caching beobachtbar machen & gezielt steuern | `lotse`/Betrieb | D7/D19 | Planned | PROJ-35, 28, 29, 30 |
+| PROJ-48 | Prompt-Caching beobachtbar machen & gezielt steuern | `lotse`/Betrieb | D7/D19 | In Review | PROJ-35, 28, 29, 30 |
 
 ## Empfohlene Build-Reihenfolge
 

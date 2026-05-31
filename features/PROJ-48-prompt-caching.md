@@ -1,6 +1,6 @@
 # PROJ-48: Prompt-Caching beobachtbar machen & gezielt steuern
 
-## Status: Planned
+## Status: In Review
 **Erstellt:** 2026-05-31
 **Zuletzt aktualisiert:** 2026-05-31
 
@@ -133,7 +133,30 @@ macht eine bestehende OpenAI-Eigenschaft messbar, steuerbar und gegen Regression
 _Wird von /architecture hinzugefügt_
 
 ## QA Test Results
-_Wird von /qa hinzugefügt_
+**Stand 2026-05-31 — Gesamturteil: FREIGABE** (3-Agenten-Team).
+
+**Umgesetzt (kein neues KI-Verhalten, rein beobachtbar/steuerbar):**
+- `protokoll_log.merke_usage` liest `usage.prompt_tokens_details.cached_tokens` (Default 0, defensiv);
+  `_token_markdown` weist `cached_tokens` + Cache-Trefferquote (`cached/prompt` in %, 0 % bei prompt==0) aus.
+- `orchestrator._merke_usage` nimmt `cached_tokens` je Iteration ins `entscheidungsprotokoll`;
+  genau **eine** INFO-Zeile pro Turn (prompt/cached/completion + Trefferquote + Vorgang-ID, **keine PII**;
+  Aggregation = Summe aller Iterationen des Turns).
+- Statischer `prompt_cache_key = "<präfix>-<sprache>"` (nur sprachabhängig), `.env`: `PROMPT_CACHE_KEY_PREFIX`
+  (Default `repair`) + `PROMPT_CACHE_KEY_ENABLED` (Default an), zentral in `repair/config.py`. Defensive
+  Übergabe via `_create_chat`: bei `TypeError` (SDK/Test-Double akzeptiert kwarg nicht) sauberer
+  Retry ohne Key → kein `ai_error`.
+- Guard-Test `tests/test_prompt_cache.py`: pinnt Byte-Repräsentation von `system_prefix("de"/"en")` und
+  `tools.specs()` (SHA-256), benennt Drift klar, dokumentiert bewusste Pin-Änderung, und prüft, dass
+  `kontext.sende_sicht` den Präfix unverändert als echtes Listen-Präfix voranstellt.
+
+**Verifikation (echte Ergebnisse, Test-Double — ohne echtes OpenAI):**
+- `pytest tests/` → **237 passed** (inkl. `tests/test_prompt_cache.py` 7/7); `test_config_drift.py` 9/9.
+- cached_tokens: 1500/2000 → `75.0 %`; ohne `prompt_tokens_details` → 0/0 %; prompt==0 → 0 % (keine ZeroDivision).
+- `prompt_cache_key`: de→`repair-de`, en→`repair-en`, unbekannt(fr)→`repair-de`-Fallback; `PROMPT_CACHE_KEY_ENABLED=0`
+  → kein Key; TypeError-Fallback → Antwort statt `ai_error`.
+- Guard-Wirksamkeit: Mini-Änderung an `_WERKZEUG_HINWEIS` → Test ROT (Drift erkannt); byte-exakt
+  zurückgenommen → grün.
+- App startet ohne `.env`/ohne Key sauber (`no_backend`-Pfad unverändert).
 
 ## Deployment
 _Wird von /deploy hinzugefügt_

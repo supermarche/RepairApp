@@ -98,6 +98,26 @@ def system_prefix(lang: str = "de") -> list[dict]:
     ]
 
 
+def _create_chat(client, *, model, messages, tools_specs, timeout, cache_key=None):
+    """Führt client.chat.completions.create() aus, optional mit prompt_cache_key.
+
+    PROJ-48: Wenn ``cache_key`` angegeben ist, wird versucht, den Key als
+    ``prompt_cache_key``-Kwarg zu senden. Lehnt der Test-Client (oder eine ältere
+    SDK-Version) das Kwarg ab (TypeError), wird der Call ohne Key wiederholt —
+    sauberer Fallback auf Auto-Caching. Echter API-/Netzwerkfehler wird NICHT
+    abgefangen und propagiert weiterhin (ai_error-Pfad im Aufrufer).
+    """
+    kwargs: dict = {"model": model, "messages": messages, "tools": tools_specs,
+                    "timeout": timeout}
+    if cache_key is not None:
+        try:
+            return client.chat.completions.create(**kwargs, prompt_cache_key=cache_key)
+        except TypeError:
+            # Kwarg nicht akzeptiert (Test-Double oder altes SDK) → ohne Key
+            pass
+    return client.chat.completions.create(**kwargs)
+
+
 def run_turn(state: dict, user_text: str, *, client=None, model=None,
              max_iterations: int | None = None) -> dict:
     """Führt einen Chat-Turn aus. Mutiert state['messages'/'karten'/...].
@@ -124,6 +144,15 @@ def run_turn(state: dict, user_text: str, *, client=None, model=None,
     state.setdefault("entscheidungsprotokoll", [])
     lang = state.get("lang", "de")
 
+    # PROJ-48: prompt_cache_key je Sprache (sprachunabhängig von vorgang_id).
+    # Fallback „de" wenn Sprache unbekannt — analog _SPRACHDIREKTIVE-Fallback.
+    _cache_lang = lang if lang in ("de", "en") else "de"
+    _cache_key: str | None = (
+        f"{config.prompt_cache_key_prefix()}-{_cache_lang}"
+        if config.prompt_cache_key_enabled()
+        else None
+    )
+
     state["messages"].append({"role": "user", "content": user_text})
     _medien_hinweis_anhaengen(state)  # PROJ-31: auf neu beigefügte Medien hinweisen
     neue_karten: list[dict] = []
@@ -133,6 +162,12 @@ def run_turn(state: dict, user_text: str, *, client=None, model=None,
     # halten nur DIESEN Turn fest (Reihenfolge erhalten).
     turn_rollen: list[str] = []
     turn_tools: list[dict] = []
+    # PROJ-48: Token-Akkumulator über alle Iterationen des Turns (Summe).
+    # Gewählt: Summe aller Iterationen (nicht nur letzte), weil mehrere
+    # Tool-Call-Runden anfallen können und die Gesamtkosten aussagekräftiger sind.
+    _turn_prompt = 0
+    _turn_cached = 0
+    _turn_completion = 0
 
     for _ in range(max_iterations):
         # PROJ-41: nicht den ganzen Verlauf senden — verdichtete Sende-Sicht aus
@@ -141,9 +176,14 @@ def run_turn(state: dict, user_text: str, *, client=None, model=None,
         # Audit-Verlauf; system_prefix() bleibt byte-stabil/cachebar.
         messages = kontext.sende_sicht(system_prefix(lang), state)
         try:
-            resp = client.chat.completions.create(
-                model=model, messages=messages, tools=tools.specs(),
-                timeout=config.llm_timeout())  # FIX S1: zentraler Getter, kein Duplikat
+            resp = _create_chat(
+                client,
+                model=model,
+                messages=messages,
+                tools_specs=tools.specs(),
+                timeout=config.llm_timeout(),
+                cache_key=_cache_key,
+            )
         except Exception as exc:  # noqa: BLE001 — jeder API-/Netzwerkfehler → ai_error
             # PROJ-40: Der create()-Call steht am Schleifenanfang; assistant-/tool-
             # Nachrichten werden erst NACH erfolgreichem create angehängt. Es bleibt
@@ -152,6 +192,8 @@ def run_turn(state: dict, user_text: str, *, client=None, model=None,
             # gesammelte Karten bleiben erhalten (neue_karten + state["karten"]).
             log.warning("KI-Call im Turn fehlgeschlagen (vorgang=%s): %s: %s",
                         vorgang_id or "—", type(exc).__name__, exc)
+            # PROJ-48: bestmöglich loggen, auch wenn Turn abbricht
+            _log_turn_usage(_turn_prompt, _turn_cached, _turn_completion, vorgang_id)
             return {"antwort_text":
                     "Die KI-Verbindung hat gerade Probleme. Bitte versuche es gleich "
                     "noch einmal.",
@@ -159,6 +201,16 @@ def run_turn(state: dict, user_text: str, *, client=None, model=None,
                     "_turn_rollen": turn_rollen, "_turn_tools": turn_tools,
                     "error": f"{type(exc).__name__}: {exc}", "code": "ai_error"}
         _merke_usage(resp, model, state)  # R4: Token-Usage best-effort festhalten
+        # PROJ-48: Token-Werte dieser Iteration zum Turn-Akkumulator addieren
+        try:
+            _usage = getattr(resp, "usage", None)
+            if _usage is not None:
+                _turn_prompt += int(_usage_attr(_usage, "prompt_tokens") or 0)
+                _turn_completion += int(_usage_attr(_usage, "completion_tokens") or 0)
+                _pd = _usage_attr(_usage, "prompt_tokens_details")
+                _turn_cached += int(_usage_attr(_pd, "cached_tokens") or 0) if _pd is not None else 0
+        except Exception:  # noqa: BLE001
+            pass
         msg = resp.choices[0].message
         tool_calls = list(getattr(msg, "tool_calls", []) or [])
 
@@ -167,6 +219,7 @@ def run_turn(state: dict, user_text: str, *, client=None, model=None,
 
         if not tool_calls:
             _sicherheits_backstop(neue_karten, state)  # nicht-sperrend, D15-konform
+            _log_turn_usage(_turn_prompt, _turn_cached, _turn_completion, vorgang_id)
             return {"antwort_text": msg.content or "", "karten": neue_karten,
                     "abgebrochen": False,
                     "_turn_rollen": turn_rollen, "_turn_tools": turn_tools}
@@ -210,6 +263,7 @@ def run_turn(state: dict, user_text: str, *, client=None, model=None,
 
     # Iterations-Limit erreicht (technisches Netz, kein fachliches Gate)
     _sicherheits_backstop(neue_karten, state)
+    _log_turn_usage(_turn_prompt, _turn_cached, _turn_completion, vorgang_id)
     return {"antwort_text":
             "Ich habe viele Schritte versucht und mache hier einen Zwischenstopp. "
             "Magst du mir noch eine Info geben?",
@@ -226,21 +280,44 @@ def _merke_usage(resp, model, state) -> None:
     contextvars-Slot); bei mehreren Tool-Iterationen ginge alles vor der letzten
     create()-Runde verloren. Daher legen wir die Usage je Iteration zusätzlich
     als Eintrag in ``state['entscheidungsprotokoll']`` ab (vollständige Spur).
+
+    PROJ-48: cached_tokens wird ebenfalls im entscheidungsprotokoll abgelegt
+    (best-effort, analog prompt/completion/total).
     """
     try:
         usage = getattr(resp, "usage", None)
         if usage is None:
             return
         protokoll_log.merke_usage(model, usage)
+        # PROJ-48: cached_tokens defensiv aus prompt_tokens_details lesen
+        prompt_details = _usage_attr(usage, "prompt_tokens_details")
+        cached = int(_usage_attr(prompt_details, "cached_tokens") or 0) if prompt_details is not None else 0
         state.setdefault("entscheidungsprotokoll", []).append({
             "usage": {
                 "model": model or "—",
                 "prompt_tokens": int(_usage_attr(usage, "prompt_tokens") or 0),
                 "completion_tokens": int(_usage_attr(usage, "completion_tokens") or 0),
                 "total_tokens": int(_usage_attr(usage, "total_tokens") or 0),
+                "cached_tokens": cached,
             }
         })
     except Exception:  # noqa: BLE001 — Protokoll darf die Fachlogik nie stören
+        pass
+
+
+def _log_turn_usage(prompt: int, cached: int, completion: int, vorgang_id: str) -> None:
+    """PROJ-48: Loggt eine INFO-Zeile pro Turn mit Token-Statistik (keine PII).
+
+    Fasst alle Iterationen des Turns zusammen (Summe). Wird an ALLEN
+    return-Pfaden von run_turn aufgerufen — inkl. ai_error und Iterations-Limit.
+    """
+    try:
+        hit_pct = round(cached / prompt * 100, 1) if prompt > 0 else 0.0
+        log.info(
+            "Turn-Token: prompt=%d cached=%d completion=%d trefferquote=%.1f%% vorgang=%s",
+            prompt, cached, completion, hit_pct, vorgang_id or "—",
+        )
+    except Exception:  # noqa: BLE001 — Logging darf nie die Fachlogik stören
         pass
 
 

@@ -4,6 +4,7 @@ __pycache__/
 .env
 vorgaenge.db
 wissensbasis.db
+feedback.db
 media/
 protokolle/
 logs/

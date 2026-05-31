@@ -44,6 +44,7 @@ PROTOKOLL_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "p
 # Nur diese POST-Endpunkte werden protokolliert; alle GET-/Sicht-Routen NICHT.
 ENDPOINT_ROLLE: dict[str, str] = {
     "api_extrahieren": "aufnahme",         # POST /api/extrahieren       (PROJ-31)
+    "api_feedback": "feedback",            # POST /api/feedback          (PROJ-46)
     "api_recherche": "recherche",          # POST /api/recherche         (PROJ-16)
     "api_wissensbasis_entwurf": "wissensbasis",  # POST /api/wissensbasis/entwurf (PROJ-15)
     "api_bewertung_gesamt": "bewertung",   # POST /api/bewertung/gesamt  (PROJ-21)
@@ -100,6 +101,9 @@ def merke_usage(model: str | None, usage) -> None:
 
     ``usage`` ist das OpenAI-Usage-Objekt (Attribute prompt_tokens,
     completion_tokens, total_tokens) oder ein dict. Scheitert nie hart.
+
+    PROJ-48: Liest zusätzlich ``cached_tokens`` aus
+    ``usage.prompt_tokens_details.cached_tokens`` (best-effort, Default 0).
     """
     try:
         if usage is None:
@@ -107,11 +111,15 @@ def merke_usage(model: str | None, usage) -> None:
         prompt = int(_attr(usage, "prompt_tokens") or 0)
         completion = int(_attr(usage, "completion_tokens") or 0)
         total = int(_attr(usage, "total_tokens") or (prompt + completion))
+        # PROJ-48: cached_tokens aus prompt_tokens_details (kann None/fehlen → 0)
+        prompt_details = _attr(usage, "prompt_tokens_details")
+        cached = int(_attr(prompt_details, "cached_tokens") or 0) if prompt_details is not None else 0
         _usage_var.set({
             "model": model or "—",
             "prompt_tokens": prompt,
             "completion_tokens": completion,
             "total_tokens": total,
+            "cached_tokens": cached,
         })
     except Exception:  # noqa: BLE001 — Protokoll darf nie die Fachlogik stören
         pass
@@ -250,13 +258,18 @@ def _token_markdown(response_json) -> tuple[str, int, str]:
 
     if usage:
         total = int(usage.get("total_tokens") or 0)
+        prompt = int(usage.get("prompt_tokens") or 0)
+        cached = int(usage.get("cached_tokens") or 0)
+        # PROJ-48: Trefferquote (0 % bei prompt == 0, keine Division durch Null)
+        hit_pct = round(cached / prompt * 100, 1) if prompt > 0 else 0.0
         md = "\n".join([
             "- **Klassifikation:** ai",
             f"- **Modell:** `{usage.get('model')}`",
             f"- **Token gesamt:** {total}",
-            f"- prompt_tokens: {usage.get('prompt_tokens')} · "
+            f"- prompt_tokens: {prompt} · cached_tokens: {cached} · "
             f"completion_tokens: {usage.get('completion_tokens')} · "
             f"total_tokens: {total}",
+            f"- **Cache-Trefferquote:** {hit_pct} % (cached/prompt)",
         ])
         return md, total, "ai"
 

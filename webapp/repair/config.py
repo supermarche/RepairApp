@@ -43,6 +43,8 @@ DEFAULT_MAX_PDF_SEITEN = 5  # max. ausgewertete PDF-Seiten je Dokument (PROJ-31)
 DEFAULT_KONTEXT_TOKEN_BUDGET = 6000  # weiche Obergrenze gesendeter variabler Kontext (PROJ-41)
 DEFAULT_KONTEXT_WOERTLICH_TURNS = 4  # jüngste Turns wörtlich erhalten (PROJ-41)
 DEFAULT_REPORT_PDF_ENABLED = True   # PDF-Erzeugung für den Übergabe-Report (PROJ-44)
+DEFAULT_MAX_FEEDBACK_BYTES = 4000   # max. Feedback-Textlänge in Bytes (PROJ-46)
+DEFAULT_PROMPT_CACHE_KEY_PREFIX = "repair"  # Präfix des prompt_cache_key (PROJ-48)
 
 
 def _raw(name: str) -> str | None:
@@ -190,6 +192,43 @@ def report_pdf_enabled() -> bool:
     return os.environ.get("REPORT_PDF_ENABLED", "1") not in ("0", "false", "False", "")
 
 
+def feedback_enabled() -> bool:
+    """Feedback-Funktion an/aus (PROJ-46).
+
+    Tolerant: ``0``/``false``/``False``/leer = aus, sonst an. Default an.
+    Deaktivieren via ``FEEDBACK_ENABLED=0`` in ``.env``; der Endpunkt
+    ``/api/feedback`` antwortet dann sauber ablehnend (403, code disabled).
+    """
+    return os.environ.get("FEEDBACK_ENABLED", "1") not in ("0", "false", "False", "")
+
+
+def max_feedback_bytes() -> int:
+    """Maximale Feedback-Textlänge in Bytes (UTF-8, PROJ-46).
+
+    Default 4000; gültig 1..10000000 (sonst Fail-fast).
+    """
+    return _int("MAX_FEEDBACK_BYTES", DEFAULT_MAX_FEEDBACK_BYTES, lo=1, hi=10_000_000)
+
+
+def prompt_cache_key_enabled() -> bool:
+    """Expliziten prompt_cache_key je Sprache senden (PROJ-48).
+
+    Tolerant: ``0``/``false``/``False``/leer = aus, sonst an. Default an.
+    Deaktivieren via ``PROMPT_CACHE_KEY_ENABLED=0``; dann nur Auto-Caching,
+    kein prompt_cache_key im Call.
+    """
+    return os.environ.get("PROMPT_CACHE_KEY_ENABLED", "1") not in ("0", "false", "False", "")
+
+
+def prompt_cache_key_prefix() -> str:
+    """Präfix des prompt_cache_key (PROJ-48).
+
+    Schlüssel = ``<präfix>-<sprache>``, z. B. ``repair-de``.
+    Default ``repair``.
+    """
+    return _raw("PROMPT_CACHE_KEY_PREFIX") or DEFAULT_PROMPT_CACHE_KEY_PREFIX
+
+
 # ── Fail-fast-Validierung beim Start ──────────────────────────────────────────
 def validate() -> None:
     """Erzwingt die frühe Auswertung aller bounded/numerischen Werte.
@@ -201,7 +240,8 @@ def validate() -> None:
     fehler: list[str] = []
     for getter in (port, llm_timeout, max_upload_bytes, max_tool_iterations,
                    max_medien_pro_anfrage, max_pdf_seiten,
-                   kontext_token_budget, kontext_woertlich_turns):
+                   kontext_token_budget, kontext_woertlich_turns,
+                   max_feedback_bytes):
         try:
             getter()
         except ConfigError as exc:

@@ -130,6 +130,10 @@ sodass die App auch **ganz ohne** `.env` startet.
 | `HOST` | `127.0.0.1` | Bind-Adresse (z. B. `0.0.0.0` im Container) |
 | `PORT` | `5000` | TCP-Port — **1..65535**, sonst Fail-fast |
 | `REPORT_PDF_ENABLED` | `1` | Service-Point-Report-PDF an/aus (PROJ-44): `0`/`false` deaktiviert den PDF-Download, Text-/Markdown-Download bleibt verfügbar |
+| `FEEDBACK_ENABLED` | `1` | Feedback-Button an/aus (PROJ-46): `0`/`false` blendet Button aus; `/api/feedback` antwortet sauber ablehnend (403 disabled) |
+| `MAX_FEEDBACK_BYTES` | `4000` | Max. Feedback-Textlänge in Bytes (UTF-8, PROJ-46) — **1..10000000**, sonst Fail-fast |
+| `PROMPT_CACHE_KEY_ENABLED` | `1` | Expliziten `prompt_cache_key` je Sprache senden (PROJ-48): `0`/`false` deaktiviert; nur Auto-Caching läuft weiter |
+| `PROMPT_CACHE_KEY_PREFIX` | `repair` | Präfix des `prompt_cache_key` (PROJ-48); Schlüssel = `<präfix>-<sprache>`, z. B. `repair-de` |
 
 **Fail-fast:** Fehlende Variablen fallen still auf den Default zurück.
 Syntaktisch **ungültige** Werte (`PORT=abc`, `PORT=99999`, `LLM_TIMEOUT=xyz`,

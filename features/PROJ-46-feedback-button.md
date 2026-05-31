@@ -1,6 +1,6 @@
-# PROJ-46: Feedback-Button (Prozess-Anmerkungen des Nutzers)
+``# PROJ-46: Feedback-Button (Prozess-Anmerkungen des Nutzers)
 
-## Status: Planned
+## Status: In Review
 **Erstellt:** 2026-05-31
 **Zuletzt aktualisiert:** 2026-05-31
 
@@ -80,7 +80,31 @@ verknüpft — es findet **kein externer Versand** statt.
 _Wird von /architecture hinzugefügt_
 
 ## QA Test Results
-_Wird von /qa hinzugefügt_
+**Stand 2026-05-31 — Gesamturteil: FREIGABE** (3-Agenten-Team: Backend / Frontend / QA).
+
+**Umgesetzt:**
+- Backend: Endpunkt `POST /api/feedback` (`app.py`), neue lokale Persistenz `repair/feedback.py`
+  (SQLite `feedback.db`, append-only, gitignored), `.env`-Schalter `FEEDBACK_ENABLED` (Default an)
+  + `MAX_FEEDBACK_BYTES` (Default 4000, Fail-fast-validiert) zentral in `repair/config.py`.
+  Zweitablage im Vorgangs-Protokoll über `ENDPOINT_ROLLE["api_feedback"]="feedback"` (PROJ-28).
+- Frontend: 💬-Feedback-Button in der ChatScreen-AppBar (nur bei vorhandenem Vorgang),
+  Feedback-Sheet (`FeedbackSheet` in `screens.js`, Muster ReportSheet), State/Handler in `app.js`,
+  i18n de+en, CSS `rk-feedback-*` (in `SPEC.md` dokumentiert).
+
+**Verifikation (echte Ergebnisse):**
+- `pytest tests/` → **237 passed** (inkl. `tests/test_feedback.py`); `tests/test_config_drift.py` 9/9 grün.
+- HTTP/curl: 200 `{ok, feedback_id}` (Umlaut/Emoji unescaped); 400 `empty`; 400 `too_long`;
+  404 `no_vorgang`; 403 `disabled` (bei `FEEDBACK_ENABLED=0`, kein Crash). Zweifach-Speicherung
+  (feedback.db + protokolle/<vid>.md mit Rolle `feedback`) und Mehrfach-Feedback (Append) bestätigt.
+- Browser (nicht-headless, Playwright): Button sichtbar, Sheet öffnet, Senden bei leer/Whitespace
+  gesperrt, Senden→200+Dank+Auto-Close, Abbrechen ohne Request, Doppel-Submit→1 Request,
+  Emoji/Sonderzeichen korrekt, Theme-konsistent.
+- Security: kein externer Versand; Feedback-Text nicht auf INFO geloggt (nur id/vid/Länge);
+  `feedback.db` gitignored; robuste 4xx statt 500 bei Fehleingaben.
+
+**Im QA behobene Bugs:** (1) 500-Crash bei Nicht-Objekt-JSON-Body → jetzt 400 (`app.py`);
+(2) Senden-Button wurde beim Tippen nicht aktiviert (disabled-Zustand nur beim Render) →
+Live-Umschaltung im input-Handler ohne Re-Render (`screens.js`).
 
 ## Deployment
 _Wird von /deploy hinzugefügt_

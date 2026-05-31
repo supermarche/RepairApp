@@ -119,6 +119,16 @@ trust = {
                                    (Modell `VISION_MODEL` → sonst `OPENAI_MODEL`); PDFs werden serverseitig
                                    in Seitenbilder gewandelt.
 
+- `POST /api/feedback`           → Body `{ "vorgang_id": "…", "text": "…", "screen": "…", "letzte_antwort": "…" }`.
+                                   Speichert Prozess-Feedback des Nutzers lokal (kein externer Versand).
+                                   `screen`: kurzes Zustands-Label (z. B. `"chat"` oder `"abgeschlossen"`).
+                                   `letzte_antwort`: Text der letzten Assistenz-Antwort (oder `""`).
+                                   Erfolg **HTTP 200**: `{ "ok": true, "feedback_id": "…" }`.
+                                   Fehler: `{ "error": "…", "code": "…" }` mit Status —
+                                   `400` (`empty`: leerer/Whitespace-Text), `400` (`too_long`: Text über Limit),
+                                   `404` (`no_vorgang`: unbekannte Vorgangs-ID), `403` (`disabled`: Feature deaktiviert via `FEEDBACK_ENABLED=false`).
+                                   (PROJ-46)
+
 - `GET /api/vorgang/<vid>/report/varianten` → `{varianten:[{key,label,dateiname}], default}`
   (PROJ-44). 404 `{error, code:"no_vorgang"}` wenn Vorgang unbekannt.
 - `GET /api/vorgang/<vid>/report.pdf?variante=<key>` → `application/pdf`,
@@ -230,6 +240,7 @@ rk-proto rk-proto-head rk-proto-e rk-proto-name rk-proto-detail rk-proto-sec rk-
 rk-proto-tags rk-proto-tag rk-proto-tag-muted rk-proto-ampel rk-proto-why rk-proto-reason
 rk-proto-owner rk-proto-share rk-share-btn
 rk-sheet-scrim rk-sheet rk-sheet-grip rk-sheet-title rk-sheet-note rk-sheet-fine rk-sheet-hr rk-sheet-level
+rk-feedback-sheet rk-feedback-textarea rk-feedback-actions rk-feedback-send rk-feedback-cancel rk-feedback-thanks rk-feedback-thanks-icon rk-feedback-char-hint rk-feedback-char-warn
 rk-theme-solide rk-theme-werkstatt rk-theme-mutig rk-case-upper rk-case-none`
 
 ## Theme-Tokens (Port von repair-themes.js — alle drei Themes als CSS-Variablen-Sets)

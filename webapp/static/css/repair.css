@@ -1597,3 +1597,60 @@ body {
 }
 .rk-report-dlbtn:hover { border-color: var(--accent); background: var(--surface-2); }
 .rk-report-variants { margin-top: 4px; }
+
+/* ─── PROJ-46: Feedback-Sheet ────────────────────────────────────────────────── */
+.rk-feedback-textarea {
+  width: 100%;
+  min-height: 100px;
+  padding: 10px 12px;
+  border: 1.5px solid var(--line-strong);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: 14px;
+  line-height: 1.5;
+  resize: vertical;
+  box-sizing: border-box;
+  transition: border-color var(--motion);
+  margin-top: 10px;
+}
+.rk-feedback-textarea:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+.rk-feedback-textarea:disabled {
+  opacity: .55;
+  cursor: not-allowed;
+}
+.rk-feedback-actions {
+  margin-top: 14px;
+}
+.rk-feedback-send:disabled {
+  opacity: .45;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+.rk-feedback-char-hint {
+  font-size: 12px;
+  color: var(--ink-soft);
+  text-align: right;
+  margin-top: 4px;
+}
+.rk-feedback-char-warn {
+  color: var(--stop, #cf3a2c);
+  font-weight: 600;
+}
+.rk-feedback-thanks {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 18px 0 8px;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--ink);
+}
+.rk-feedback-thanks-icon {
+  font-size: 22px;
+  line-height: 1;
+}

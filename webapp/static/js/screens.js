@@ -2007,10 +2007,15 @@
     }, props.recording ? '⏹' : props.transcribing ? '⏳' : '🎙️');
 
     // PROJ-44: Report-Button im right-Slot; bleibt neben dem Restart-Button wenn beendet.
+    // PROJ-46: Feedback-Button im right-Slot (nur bei aktivem Vorgang).
     var reportBtn = props.vorgangId
       ? IconBtn({ onClick: props.onReport, label: t('report.open'), children: h('span', {}, '📄') })
       : null;
+    var feedbackBtn = props.vorgangId
+      ? IconBtn({ onClick: props.onFeedbackOpen, label: t('feedback.open'), children: h('span', {}, '💬') })
+      : null;
     var rightSlot = h('span', { style: { display: 'flex', alignItems: 'center', gap: '2px' } },
+      feedbackBtn,
       reportBtn,
       props.abgebrochen
         ? IconBtn({ onClick: props.onRestart, label: t('nav.startseite'), children: h('span', {}, '↺') })
@@ -2112,6 +2117,18 @@
       })
       : null;
 
+    // PROJ-46: Feedback-Sheet.
+    var feedbackSheet = props.feedbackOpen && window.FeedbackSheet
+      ? window.FeedbackSheet({
+        draft: props.feedbackDraft || '',
+        sending: props.feedbackSending,
+        done: props.feedbackDone,
+        onDraft: props.onFeedbackDraft,
+        onSend: props.onFeedbackSend,
+        onClose: props.onFeedbackClose,
+      })
+      : null;
+
     return Screen({
       bar: bar,
       footer: props.abgebrochen
@@ -2127,8 +2144,90 @@
         feed,
         consentSheet,
         reportSheet,
+        feedbackSheet,
       ],
     });
+  }
+
+  /* ===================== PROJ-46: FEEDBACK-SHEET ===================== */
+
+  // Feedback-Sheet — Freitextfeld + Senden/Schließen-Aktionen.
+  // Muster: ReportSheet + rk-sheet / rk-sheet-scrim.
+  // MAX_FEEDBACK_BYTES Default 4000 → maxlength am textarea als clientseitige Absicherung.
+  var FEEDBACK_MAX_LEN = 4000;
+
+  function FeedbackSheet(props) {
+    props = props || {};
+    var sending = !!props.sending;
+    var done = !!props.done;
+    var draft = props.draft || '';
+    var canSend = !sending && !done && draft.trim().length > 0;
+
+    var bodyContent;
+    if (done) {
+      // Bestätigungs-Ansicht
+      bodyContent = h('div', { class: 'rk-feedback-thanks' },
+        h('span', { class: 'rk-feedback-thanks-icon' }, '✅'),
+        h('span', {}, t('feedback.thanks'))
+      );
+    } else {
+      // Freitextfeld — onChange imperativ setzen (h() kennt kein onChange).
+      var textarea = h('textarea', {
+        class: 'rk-feedback-textarea',
+        placeholder: t('feedback.placeholder'),
+        maxlength: String(FEEDBACK_MAX_LEN),
+        disabled: sending ? true : null,
+        rows: '4',
+      });
+      // Wert einmalig setzen; onInput ohne Re-Render (analog setDraft).
+      textarea.value = draft;
+      textarea.addEventListener('input', function (e) {
+        if (props.onDraft) props.onDraft(e.target.value);
+        // Senden-Button live (de)aktivieren, OHNE Re-Render (Fokus erhalten):
+        // disabled folgt dem Trimm-Zustand des aktuellen Texts (PROJ-46 D3/D4).
+        if (sendBtn) {
+          var hatText = !sending && !done && e.target.value.trim().length > 0;
+          sendBtn.disabled = !hatText;
+        }
+      });
+
+      var charHint = draft.length > FEEDBACK_MAX_LEN * 0.85
+        ? h('div', { class: 'rk-feedback-char-hint' + (draft.length >= FEEDBACK_MAX_LEN ? ' rk-feedback-char-warn' : '') },
+            draft.length + ' / ' + FEEDBACK_MAX_LEN)
+        : null;
+
+      var sendBtn = h('button', {
+        class: 'rk-feedback-send rk-nav rk-nav-primary',
+        disabled: (!canSend) ? true : null,
+        onClick: function () { if (props.onSend) props.onSend(); },
+      }, sending ? '…' : t('feedback.send'));
+
+      var cancelBtn = h('button', {
+        class: 'rk-feedback-cancel rk-nav rk-nav-ghost',
+        onClick: function () { if (props.onClose) props.onClose(); },
+      }, t('feedback.cancel'));
+
+      bodyContent = h('div', { class: 'rk-sheet-body' },
+        h('p', { class: 'rk-sheet-note' }, t('feedback.intro')),
+        textarea,
+        charHint,
+        h('div', { class: 'rk-feedback-actions rk-navrow' }, sendBtn, cancelBtn)
+      );
+    }
+
+    var sheet = h('div', { class: 'rk-sheet rk-feedback-sheet' },
+      h('div', { class: 'rk-sheet-grip' }),
+      h('div', { class: 'rk-sheet-title' }, t('feedback.title')),
+      bodyContent
+    );
+    sheet.addEventListener('click', function (e) { e.stopPropagation(); });
+
+    var scrim = h('div', { class: 'rk-sheet-scrim' }, sheet);
+    // Klick auf Scrim schließt Dialog (nur wenn nicht gerade am Senden)
+    scrim.addEventListener('click', function () {
+      if (!sending && props.onClose) props.onClose();
+    });
+    return scrim;
   }
 
   /* ===================== PROJ-44: REPORT-SHEET ===================== */
@@ -2209,5 +2308,7 @@
     ConsentGateOverlay: ConsentGateOverlay, ConsentStatus: ConsentStatus,
     // PROJ-44
     ReportSheet: ReportSheet,
+    // PROJ-46
+    FeedbackSheet: FeedbackSheet,
   });
 })();
