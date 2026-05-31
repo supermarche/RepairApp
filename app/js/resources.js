@@ -518,7 +518,7 @@ function formatAddress(tags) {
   const street = [tags["addr:street"], tags["addr:housenumber"]].filter(Boolean).join(" ");
   const city = tags["addr:city"];
 
-  return [street, city].filter(Boolean).join(", ") || "Gorlitz area";
+  return [street, city].filter(Boolean).join(", ") || "Selected search area";
 }
 
 function describeOsmResource(tags, type) {
@@ -530,7 +530,7 @@ function describeOsmResource(tags, type) {
     return "OpenStreetMap recycling centre candidate for safe disposal.";
   }
 
-  return "OpenStreetMap repair-related place found in the Gorlitz demo area.";
+  return "OpenStreetMap repair-related place found in the selected search area.";
 }
 
 function fallbackName(type) {
