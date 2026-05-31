@@ -81,8 +81,10 @@ Die Informationen über Werkstätten, Ersatzteile und Förderungen sind über ve
 
 ****
 [.lead]
-Repair App bündelt Wissen, Bewertung und nächste Schritte.
+RepairApp bündelt *Wissen*, *Bewertung* und *Handlungsempfehlungen*.
+****
 
+****
 [.text-center]
 *Erkennen · Bewerten · Handeln*
 
@@ -91,7 +93,7 @@ Repair App bündelt Wissen, Bewertung und nächste Schritte.
 a|[.text-center]
 *1. Erkennen*
 
-Symptome und Gerät einordnen.
+Symptome und Gerät/Gegendstand einordnen.
 
 a|[.text-center]
 *2. Bewerten*
@@ -101,7 +103,7 @@ Risiko, Aufwand und Kosten abwägen.
 a|[.text-center]
 *3. Handeln*
 
-Reparatur, Ersatzteil oder Werkstatt empfehlen.
+Reparatur, Ersatzteil, Werkstatt oder Neuanschaffung empfehlen.
 |===
 ****
 
@@ -112,20 +114,20 @@ Reparatur, Ersatzteil oder Werkstatt empfehlen.
 
 ****
 [.text-center]
-
-Ein klares Urteil statt Bauchgefühl. Ein nächster Schritt statt Informationssuche.
+[.lead]
+Ein klare Empfehlung statt Bauchgefühl. Ein nächster Schritt anstatt Informationssuche.
 
 [cols="1,1,1", frame=none, grid=cols]
 |===
 a|[.text-center]
-*Weniger Reibung*
+*Weniger Aufwand*
 
-Schneller verstehen.
+Schneller wieder Funktionalität erreichen.
 
 a|[.text-center]
 *Mehr Sicherheit*
 
-Besser entscheiden.
+Besser entscheiden auf Grund von Daten.
 
 a|[.text-center]
 *Mehr Selbstwirksamkeit*
@@ -137,10 +139,10 @@ Selbst reparieren oder gezielt Hilfe holen.
 
 // =====================  FOLIE 5 — Wert  =====================================
 <<<
-== Warum das zählt
+== Was ist der Mehrwert?
 
 ****
-[.text-center]
+[.text-center][.lead]
 *Ökologisch* · *Finanziell* · *Sozial*
 
 Weniger Wegwerfen, mehr Wiederverwenden.
@@ -151,17 +153,7 @@ Menschen trauen sich wieder mehr zu.
 
 // =====================  FOLIE 6 — Demo  =====================================
 <<<
-== Demo / Kernidee
-
-****
-----
-POST /api/triage
-{ "device": "Toaster", "problem": "springt nicht mehr aus" }
-----
-
-[.text-center]
-Die Antwort ist nicht nur eine Diagnose, sondern eine Handlungsempfehlung.
-****
+image::mockup.png[height=600]
 
 
 // =====================  FOLIE 7 — Nächster Schritt  ==========================
