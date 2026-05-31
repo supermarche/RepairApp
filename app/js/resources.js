@@ -174,20 +174,23 @@ export function typeLabel(type) {
   return resourceTypes.find((item) => item.value === type)?.label || type;
 }
 
-export async function loadOsmResources(fetchImpl = fetch) {
+export async function loadOsmResources(options = {}) {
+  const { bbox, fetchImpl } = typeof options === "function"
+    ? { fetchImpl: options }
+    : options;
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), config.overpassBrowserTimeoutMs);
   let response;
 
   try {
-    response = await fetchImpl(config.overpassEndpoint, {
+    response = await (fetchImpl || fetch)(config.overpassEndpoint, {
       method: "POST",
       headers: {
         "Accept": "application/json",
         "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8",
         "User-Agent": "RepairApp-Hackathon-MVP/1.0",
       },
-      body: new URLSearchParams({ data: buildOverpassQuery() }),
+      body: new URLSearchParams({ data: buildOverpassQuery(bbox) }),
       signal: controller.signal,
     });
   } finally {
