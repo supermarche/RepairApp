@@ -42,6 +42,7 @@ DEFAULT_MAX_MEDIEN_PRO_ANFRAGE = 6  # max. Medien je Diagnose-Anfrage (PROJ-31)
 DEFAULT_MAX_PDF_SEITEN = 5  # max. ausgewertete PDF-Seiten je Dokument (PROJ-31)
 DEFAULT_KONTEXT_TOKEN_BUDGET = 6000  # weiche Obergrenze gesendeter variabler Kontext (PROJ-41)
 DEFAULT_KONTEXT_WOERTLICH_TURNS = 4  # jüngste Turns wörtlich erhalten (PROJ-41)
+DEFAULT_REPORT_PDF_ENABLED = True   # PDF-Erzeugung für den Übergabe-Report (PROJ-44)
 
 
 def _raw(name: str) -> str | None:
@@ -177,6 +178,16 @@ def kontext_woertlich_turns() -> int:
 def flask_debug() -> bool:
     """Flask-Debug-Modus. Tolerant: ``0``/``false``/leer = aus, sonst an. Default an."""
     return os.environ.get("FLASK_DEBUG", "1") not in ("0", "false", "False", "")
+
+
+def report_pdf_enabled() -> bool:
+    """PDF-Erzeugung für den Service-Point-Übergabe-Report (PROJ-44).
+
+    Tolerant: ``0``/``false``/``False``/leer = aus, sonst an. Default an.
+    Deaktivieren via ``REPORT_PDF_ENABLED=0`` in ``.env`` (z. B. für Staging
+    ohne PyMuPDF-Wheel oder für Testläufe ohne PDF-Ausgabe).
+    """
+    return os.environ.get("REPORT_PDF_ENABLED", "1") not in ("0", "false", "False", "")
 
 
 # ── Fail-fast-Validierung beim Start ──────────────────────────────────────────

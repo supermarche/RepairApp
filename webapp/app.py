@@ -69,9 +69,11 @@ from repair import (
     lotse,
     multimodal,
     orchestrator,
+    pdf_engine,
     produktsuche,
     protokoll_log,
     recherche,
+    report,
     schwungrad,
     store,
     triage,
@@ -987,6 +989,111 @@ def vorgang_view(vid: str):
 
     html = export.render_html(vorgang.get("state") or {}, vorgang)
     return Response(html, content_type="text/html; charset=utf-8")
+
+
+# ─── PROJ-44: Service-Point-Übergabe-Report ───────────────────────────────────
+
+
+@app.get("/api/vorgang/<vid>/report/varianten")
+def api_report_varianten(vid: str):
+    """PROJ-44 — Liste der Report-Varianten für die UI.
+
+    → 404 wenn Vorgang unbekannt.
+    → 200 {varianten:[{key,label,dateiname}], default}
+    """
+    vorgang = store.get_vorgang(vid)
+    if vorgang is None:
+        return _json_error("Unbekannter Vorgang.", "no_vorgang", 404)
+    state = vorgang.get("state") or {}
+    lang = str(state.get("lang") or "de").strip().lower()
+    if lang not in ("de", "en"):
+        lang = "de"
+    return jsonify({"varianten": report.varianten(lang), "default": report.DEFAULT_VARIANTE})
+
+
+@app.get("/api/vorgang/<vid>/report.pdf")
+def api_report_pdf(vid: str):
+    """PROJ-44 — Vorgang als PDF herunterladen.
+
+    Query: ?variante=<key> (Default: uebergabe, unbekannte → Default, kein Fehler)
+    → 404 wenn Vorgang unbekannt.
+    → 503 {error, code:pdf_unavailable} wenn PDF-Engine nicht verfügbar.
+    → 200 application/pdf, Content-Disposition: attachment.
+    """
+    vorgang = store.get_vorgang(vid)
+    if vorgang is None:
+        return _json_error("Unbekannter Vorgang.", "no_vorgang", 404)
+    state = vorgang.get("state") or {}
+    lang = str(state.get("lang") or "de").strip().lower()
+    if lang not in ("de", "en"):
+        lang = "de"
+    variante = report.normalisiere_variante(request.args.get("variante"), lang)
+    # Dateiname aus VARIANTEN-Dict
+    dateiname = report.VARIANTEN[variante]["dateiname"]
+    try:
+        html = report.render_html(state, vorgang, variante, lang)
+        pdf_bytes = pdf_engine.html_zu_pdf(html)
+    except pdf_engine.PdfNichtVerfuegbar:
+        return _json_error(
+            "PDF derzeit nicht verfügbar — bitte Text- oder Markdown-Download nutzen.",
+            "pdf_unavailable",
+            503,
+        )
+    return Response(
+        pdf_bytes,
+        mimetype="application/pdf",
+        headers={"Content-Disposition": f'attachment; filename="{dateiname}_{vid}.pdf"'},
+    )
+
+
+@app.get("/api/vorgang/<vid>/report.md")
+def api_report_md(vid: str):
+    """PROJ-44 — Vorgang als Markdown-Datei herunterladen.
+
+    Query: ?variante=<key> (Default: uebergabe)
+    → 404 wenn Vorgang unbekannt.
+    → 200 text/markdown, Content-Disposition: attachment.
+    """
+    vorgang = store.get_vorgang(vid)
+    if vorgang is None:
+        return _json_error("Unbekannter Vorgang.", "no_vorgang", 404)
+    state = vorgang.get("state") or {}
+    lang = str(state.get("lang") or "de").strip().lower()
+    if lang not in ("de", "en"):
+        lang = "de"
+    variante = report.normalisiere_variante(request.args.get("variante"), lang)
+    dateiname = report.VARIANTEN[variante]["dateiname"]
+    text = report.render_markdown(state, vorgang, variante, lang)
+    return Response(
+        text,
+        mimetype="text/markdown; charset=utf-8",
+        headers={"Content-Disposition": f'attachment; filename="{dateiname}_{vid}.md"'},
+    )
+
+
+@app.get("/api/vorgang/<vid>/report.txt")
+def api_report_txt(vid: str):
+    """PROJ-44 — Vorgang als Klartext-Datei herunterladen.
+
+    Query: ?variante=<key> (Default: uebergabe)
+    → 404 wenn Vorgang unbekannt.
+    → 200 text/plain, Content-Disposition: attachment.
+    """
+    vorgang = store.get_vorgang(vid)
+    if vorgang is None:
+        return _json_error("Unbekannter Vorgang.", "no_vorgang", 404)
+    state = vorgang.get("state") or {}
+    lang = str(state.get("lang") or "de").strip().lower()
+    if lang not in ("de", "en"):
+        lang = "de"
+    variante = report.normalisiere_variante(request.args.get("variante"), lang)
+    dateiname = report.VARIANTEN[variante]["dateiname"]
+    text = report.render_text(state, vorgang, variante, lang)
+    return Response(
+        text,
+        mimetype="text/plain; charset=utf-8",
+        headers={"Content-Disposition": f'attachment; filename="{dateiname}_{vid}.txt"'},
+    )
 
 
 if __name__ == "__main__":

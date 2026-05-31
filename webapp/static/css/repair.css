@@ -1522,3 +1522,46 @@ body {
   .rk-ghost:hover { color: var(--accent); }
   .rk-iconbtn:hover { background: var(--surface-2); }
 }
+
+/* ─── PROJ-44: Report-Sheet ─────────────────────────────────────────────────── */
+/* Varianten-Chips */
+.rk-report-chips { display: flex; flex-wrap: wrap; gap: 8px; margin: 8px 0 4px; }
+.rk-report-chip {
+  display: inline-block;
+  padding: .35em .75em;
+  border-radius: 99px;
+  border: 1.5px solid var(--line-strong);
+  font-size: 13px;
+  color: var(--ink-soft);
+  cursor: pointer;
+  transition: border-color var(--motion), color var(--motion), background var(--motion);
+}
+.rk-report-chip-on {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--surface-2);
+  font-weight: 600;
+}
+/* Download-Buttons-Reihe */
+.rk-report-dl {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+.rk-report-dlbtn {
+  flex: 1 1 auto;
+  min-width: 6rem;
+  padding: .5em .85em;
+  border: 1.5px solid var(--line-strong);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--ink);
+  font-size: 13.5px;
+  font-family: var(--font-ui);
+  cursor: pointer;
+  text-align: center;
+  transition: border-color var(--motion), background var(--motion);
+}
+.rk-report-dlbtn:hover { border-color: var(--accent); background: var(--surface-2); }
+.rk-report-variants { margin-top: 4px; }

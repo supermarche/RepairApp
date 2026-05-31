@@ -1989,13 +1989,22 @@
       onClick: function () { if (props.onSend) props.onSend(); },
     }, '➤');
 
+    // PROJ-44: Report-Button im right-Slot; bleibt neben dem Restart-Button wenn beendet.
+    var reportBtn = props.vorgangId
+      ? IconBtn({ onClick: props.onReport, label: t('report.open'), children: h('span', {}, '📄') })
+      : null;
+    var rightSlot = h('span', { style: { display: 'flex', alignItems: 'center', gap: '2px' } },
+      reportBtn,
+      props.abgebrochen
+        ? IconBtn({ onClick: props.onRestart, label: t('nav.startseite'), children: h('span', {}, '↺') })
+        : null
+    );
+
     var bar = AppBar({
       left: h('span', { class: 'rk-brand', style: { marginBottom: '0' } },
         h('span', { class: 'rk-brand-mark' }, '🔧')),
       title: h('span', {}, t('start.brand')),
-      right: props.abgebrochen
-        ? IconBtn({ onClick: props.onRestart, label: t('nav.startseite'), children: h('span', {}, '↺') })
-        : h('span', {}),
+      right: rightSlot,
     });
 
     // PROJ-31: Chips der noch nicht gesendeten Anhänge (über der Eingabezeile).
@@ -2041,6 +2050,20 @@
       })
       : null;
 
+    // PROJ-44: Report-Sheet.
+    var reportSheet = props.reportOpen && window.ReportSheet
+      ? window.ReportSheet({
+        varianten: props.reportVarianten || [],
+        variante: props.reportVariante || 'uebergabe',
+        onVariante: props.onReportVariante,
+        onClose: props.onReportClose,
+        onDownloadPdf: props.onReportDownloadPdf,
+        onDownloadMd: props.onReportDownloadMd,
+        onDownloadTxt: props.onReportDownloadTxt,
+        onCopy: props.onReportCopy,
+      })
+      : null;
+
     return Screen({
       bar: bar,
       footer: props.abgebrochen
@@ -2055,8 +2078,69 @@
           : null,
         feed,
         consentSheet,
+        reportSheet,
       ],
     });
+  }
+
+  /* ===================== PROJ-44: REPORT-SHEET ===================== */
+
+  // Report-Sheet — Varianten-Auswahl + Download/Kopieren-Buttons.
+  // Muster: MediaConsentSheet / rk-sheet + rk-sheet-scrim.
+  function ReportSheet(props) {
+    props = props || {};
+    var varianten = props.varianten || [];
+    var gewaehlteVariante = props.variante || 'uebergabe';
+
+    // Varianten-Auswahl als Radio-Chips
+    var variantenEls = varianten.map(function (v) {
+      var aktiv = v.key === gewaehlteVariante;
+      // h() kennt nur onClick/onInput/onKeydown (kein onChange) — daher den
+      // Handler an das Label hängen, nicht an den Radio-Input.
+      return h('label', {
+        class: 'rk-report-chip' + (aktiv ? ' rk-report-chip-on' : ''),
+        role: 'radio', 'aria-checked': aktiv ? 'true' : 'false',
+        onClick: function () { if (props.onVariante) props.onVariante(v.key); },
+      },
+        h('input', {
+          type: 'radio', name: 'report-variante', value: v.key,
+          checked: aktiv ? true : null,
+          tabindex: '-1',
+          style: { display: 'none' },
+        }),
+        v.label
+      );
+    });
+
+    // Download-Buttons
+    var dlRow = h('div', { class: 'rk-report-dl' },
+      h('button', { class: 'rk-report-dlbtn', onClick: props.onDownloadPdf, title: t('report.pdf') },
+        '📄 ' + t('report.pdf')),
+      h('button', { class: 'rk-report-dlbtn', onClick: props.onDownloadMd, title: t('report.markdown') },
+        '⬇ ' + t('report.markdown')),
+      h('button', { class: 'rk-report-dlbtn', onClick: props.onDownloadTxt, title: t('report.text') },
+        '⬇ ' + t('report.text')),
+      h('button', { class: 'rk-report-dlbtn', onClick: props.onCopy, title: t('report.copy') },
+        '📋 ' + t('report.copy'))
+    );
+
+    var sheet = h('div', { class: 'rk-sheet rk-report-sheet' },
+      h('div', { class: 'rk-sheet-grip' }),
+      h('div', { class: 'rk-sheet-title' }, t('report.title')),
+      varianten.length
+        ? h('div', { class: 'rk-report-variants' },
+          h('div', { class: 'rk-sheet-note' }, t('report.varianteLabel') + ':'),
+          h('div', { class: 'rk-report-chips' }, variantenEls)
+          )
+        : null,
+      h('div', { class: 'rk-sheet-hr' }),
+      dlRow
+    );
+    sheet.addEventListener('click', function (e) { e.stopPropagation(); });
+
+    var scrim = h('div', { class: 'rk-sheet-scrim' }, sheet);
+    scrim.addEventListener('click', function () { if (props.onClose) props.onClose(); });
+    return scrim;
   }
 
   /* ===================== EXPORT — WINDOW-ASSIGNMENT (alle Screens) ===================== */
@@ -2075,5 +2159,7 @@
     MediaConsentSheet: MediaConsentSheet, MediaPanel: MediaPanel,
     GesamtFazitBlock: GesamtFazitBlock, SteerBar: SteerBar,
     ConsentGateOverlay: ConsentGateOverlay, ConsentStatus: ConsentStatus,
+    // PROJ-44
+    ReportSheet: ReportSheet,
   });
 })();

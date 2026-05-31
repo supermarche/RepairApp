@@ -124,7 +124,7 @@
 
 | ID | Feature | Rolle | D-Anker | Status | Abhängigkeiten |
 |---|---|---|---|---|---|
-| PROJ-44 | Service-Point-Übergabe-Report (PDF- & Text-Download, mehrere Zielgruppen-Varianten) | `protokoll`/`vermittlung` | D14/D3/D23 | Planned | PROJ-9, 10, 33 |
+| PROJ-44 | Service-Point-Übergabe-Report (PDF- & Text-Download, mehrere Zielgruppen-Varianten) | `protokoll`/`vermittlung` | D14/D3/D23 | In Review | PROJ-9, 10, 33 |
 
 ## Stufe 7 — Echte Datengrundlage für die Vermittlung
 

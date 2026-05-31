@@ -449,6 +449,16 @@
       'toast.linkManual': 'Bitte den Link manuell markieren und kopieren.',
       'toast.vorgangFail': 'Konnte den Vorgang nicht speichern — bitte erneut versuchen.',
       'toast.vorgangNotFound': 'Vorgang nicht gefunden — neuer Start.',
+      // Report / Download (PROJ-44)
+      'report.open': 'Report herunterladen',
+      'report.title': 'Report herunterladen',
+      'report.varianteLabel': 'Variante',
+      'report.pdf': 'PDF',
+      'report.markdown': 'Markdown',
+      'report.text': 'Text',
+      'report.copy': 'Kopieren',
+      'report.copyOk': 'Report in die Zwischenablage kopiert.',
+      'report.pdfFail': 'PDF derzeit nicht verfügbar — bitte Markdown oder Text laden.',
     },
     en: {
       // Navigation / General
@@ -886,6 +896,16 @@
       'toast.linkManual': 'Please select and copy the link manually.',
       'toast.vorgangFail': 'Could not save the case — please try again.',
       'toast.vorgangNotFound': 'Case not found — fresh start.',
+      // Report / Download (PROJ-44)
+      'report.open': 'Download report',
+      'report.title': 'Download report',
+      'report.varianteLabel': 'Variant',
+      'report.pdf': 'PDF',
+      'report.markdown': 'Markdown',
+      'report.text': 'Text',
+      'report.copy': 'Copy',
+      'report.copyOk': 'Report copied to clipboard.',
+      'report.pdfFail': 'PDF currently unavailable — please use Markdown or Text.',
     }
   };
 
@@ -1016,6 +1036,10 @@
     pendingMedien: [],       // [{ id, name, art }]
     mediaConsentOpen: false, // Consent-Sheet sichtbar?
     mediaUploading: false,   // läuft gerade ein Upload?
+    // PROJ-44: Report-Sheet
+    reportOpen: false,       // Report-Sheet sichtbar?
+    reportVariante: 'uebergabe', // gewählte Variante
+    reportVarianten: [],     // [{key, label, dateiname}] — geladen via /report/varianten
   };
   window.RepairAppState = State; // Debug-Hook
 
@@ -1203,6 +1227,139 @@
     render();
   }
 
+  /* ===================== PROJ-44: REPORT-HANDLER ===================== */
+
+  function onReport() {
+    if (!State.vorgangId) return;
+    // Varianten laden, falls noch leer
+    if (!State.reportVarianten.length) {
+      fetch('/api/vorgang/' + encodeURIComponent(State.vorgangId) + '/report/varianten')
+        .then(function (r) { return r.json().catch(function () { return {}; }); })
+        .then(function (res) {
+          if (res && Array.isArray(res.varianten)) {
+            State.reportVarianten = res.varianten;
+            State.reportVariante = res.default || 'uebergabe';
+          }
+          State.reportOpen = true;
+          render();
+        })
+        .catch(function () {
+          State.reportOpen = true;
+          render();
+        });
+    } else {
+      State.reportOpen = true;
+      render();
+    }
+  }
+
+  function onReportClose() {
+    State.reportOpen = false;
+    render();
+  }
+
+  function onReportVariante(key) {
+    State.reportVariante = key;
+    render();
+  }
+
+  // Sprechender Dateiname: <dateiname-der-variante>_<vorgang-id>.<ext> (AK PROJ-44:
+  // enthält Vorgang-ID UND Variante). dateiname kommt aus /report/varianten;
+  // Fallback auf den feststehenden Default, falls die Liste noch nicht geladen ist.
+  function reportDateiname(ext) {
+    var name = 'reparatur-uebergabe';
+    (State.reportVarianten || []).forEach(function (v) {
+      if (v && v.key === State.reportVariante && v.dateiname) name = v.dateiname;
+    });
+    return name + '_' + State.vorgangId + '.' + ext;
+  }
+
+  function onReportDownloadPdf() {
+    if (!State.vorgangId) return;
+    var url = '/api/vorgang/' + encodeURIComponent(State.vorgangId) +
+      '/report.pdf?variante=' + encodeURIComponent(State.reportVariante);
+    fetch(url)
+      .then(function (res) {
+        if (!res.ok) {
+          // 503: PDF nicht verfügbar
+          toast(t('report.pdfFail'));
+          return null;
+        }
+        return res.blob();
+      })
+      .then(function (blob) {
+        if (!blob) return;
+        var objUrl = URL.createObjectURL(blob);
+        var a = document.createElement('a');
+        a.href = objUrl;
+        a.download = reportDateiname('pdf');
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        setTimeout(function () { URL.revokeObjectURL(objUrl); }, 10000);
+      })
+      .catch(function () { toast(t('report.pdfFail')); });
+  }
+
+  function onReportDownloadMd() {
+    if (!State.vorgangId) return;
+    var url = '/api/vorgang/' + encodeURIComponent(State.vorgangId) +
+      '/report.md?variante=' + encodeURIComponent(State.reportVariante);
+    fetch(url)
+      .then(function (res) { return res.ok ? res.blob() : null; })
+      .then(function (blob) {
+        if (!blob) { toast(t('toast.textFail')); return; }
+        var objUrl = URL.createObjectURL(blob);
+        var a = document.createElement('a');
+        a.href = objUrl;
+        a.download = reportDateiname('md');
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        setTimeout(function () { URL.revokeObjectURL(objUrl); }, 10000);
+      })
+      .catch(function () { toast(t('toast.textFail')); });
+  }
+
+  function onReportDownloadTxt() {
+    if (!State.vorgangId) return;
+    var url = '/api/vorgang/' + encodeURIComponent(State.vorgangId) +
+      '/report.txt?variante=' + encodeURIComponent(State.reportVariante);
+    fetch(url)
+      .then(function (res) { return res.ok ? res.blob() : null; })
+      .then(function (blob) {
+        if (!blob) { toast(t('toast.textFail')); return; }
+        var objUrl = URL.createObjectURL(blob);
+        var a = document.createElement('a');
+        a.href = objUrl;
+        a.download = reportDateiname('txt');
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        setTimeout(function () { URL.revokeObjectURL(objUrl); }, 10000);
+      })
+      .catch(function () { toast(t('toast.textFail')); });
+  }
+
+  function onReportCopy() {
+    if (!State.vorgangId) return;
+    var url = '/api/vorgang/' + encodeURIComponent(State.vorgangId) +
+      '/report.txt?variante=' + encodeURIComponent(State.reportVariante);
+    fetch(url)
+      .then(function (res) { return res.ok ? res.text() : null; })
+      .then(function (text) {
+        if (!text) { toast(t('toast.textFail')); return; }
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(text)
+            .then(function () { toast(t('report.copyOk')); })
+            .catch(function () { toast(t('toast.copyUnsupported')); });
+        } else {
+          toast(t('toast.copyUnsupported'));
+        }
+      })
+      .catch(function () { toast(t('toast.textFail')); });
+  }
+
   /* ===================== UI-SETTER ===================== */
   function setDraft(v) { State.draft = v; }   // kein Re-Render — Fokus erhalten
   function onSend() { sendeNachricht(State.draft); }
@@ -1229,6 +1386,18 @@
       onRemovePending: entfernePendingMedium,
       onMediaConsentAccept: onMediaConsentAccept,
       onMediaConsentDecline: onMediaConsentDecline,
+      // PROJ-44: Report-Sheet
+      vorgangId: State.vorgangId,
+      reportOpen: State.reportOpen,
+      reportVariante: State.reportVariante,
+      reportVarianten: State.reportVarianten,
+      onReport: onReport,
+      onReportClose: onReportClose,
+      onReportVariante: onReportVariante,
+      onReportDownloadPdf: onReportDownloadPdf,
+      onReportDownloadMd: onReportDownloadMd,
+      onReportDownloadTxt: onReportDownloadTxt,
+      onReportCopy: onReportCopy,
     });
     State.appEl.replaceChildren(screen);
     // Nach dem Rendern ans Ende scrollen + Eingabe fokussieren.

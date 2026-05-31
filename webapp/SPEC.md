@@ -119,6 +119,17 @@ trust = {
                                    (Modell `VISION_MODEL` → sonst `OPENAI_MODEL`); PDFs werden serverseitig
                                    in Seitenbilder gewandelt.
 
+- `GET /api/vorgang/<vid>/report/varianten` → `{varianten:[{key,label,dateiname}], default}`
+  (PROJ-44). 404 `{error, code:"no_vorgang"}` wenn Vorgang unbekannt.
+- `GET /api/vorgang/<vid>/report.pdf?variante=<key>` → `application/pdf`,
+  `Content-Disposition: attachment; filename="<dateiname>_<vid>.pdf"` (PROJ-44).
+  Unbekannte vid → 404. Unbekannte/leere Variante → Default (`uebergabe`), kein Fehler.
+  PDF-Engine nicht verfügbar (oder `REPORT_PDF_ENABLED=0`) → 503 `{error, code:"pdf_unavailable"}`.
+- `GET /api/vorgang/<vid>/report.md?variante=<key>` → `text/markdown; charset=utf-8`,
+  `Content-Disposition: attachment` (PROJ-44). 404 bei unbekannter vid.
+- `GET /api/vorgang/<vid>/report.txt?variante=<key>` → `text/plain; charset=utf-8`,
+  `Content-Disposition: attachment` (PROJ-44). 404 bei unbekannter vid.
+
 > Die App bietet weitere Endpunkte (Vorgang-Persistenz `GET/PUT /api/vorgang/<id>`,
 > kuratierte Service-Daten, Wissensbasis, Lotse, Consent, Multimodal …) —
 > vollständige Liste in `app.py` bzw. README. Maßgeblich für *neue* Arbeit ist der

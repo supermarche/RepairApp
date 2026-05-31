@@ -129,6 +129,7 @@ sodass die App auch **ganz ohne** `.env` startet.
 | `FLASK_DEBUG` | `1` | Flask-Debug-Modus (tolerant: `0`/`false`/leer = aus) |
 | `HOST` | `127.0.0.1` | Bind-Adresse (z. B. `0.0.0.0` im Container) |
 | `PORT` | `5000` | TCP-Port — **1..65535**, sonst Fail-fast |
+| `REPORT_PDF_ENABLED` | `1` | Service-Point-Report-PDF an/aus (PROJ-44): `0`/`false` deaktiviert den PDF-Download, Text-/Markdown-Download bleibt verfügbar |
 
 **Fail-fast:** Fehlende Variablen fallen still auf den Default zurück.
 Syntaktisch **ungültige** Werte (`PORT=abc`, `PORT=99999`, `LLM_TIMEOUT=xyz`,
