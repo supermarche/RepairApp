@@ -1,2 +1,5 @@
 
 .idea/
+
+# Local read-only learning repositories
+/references/
