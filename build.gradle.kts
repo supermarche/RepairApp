@@ -33,6 +33,9 @@ tasks.named<AsciidoctorPdfTask>("asciidoctorPdf") {
         mapOf(
             "mermaid-puppeteer-config" to file("docs/.puppeteer-config.json").absolutePath,
             "mermaid-format" to "png",
+            // 3x Pixeldichte (Puppeteer deviceScaleFactor) → scharfe PNGs trotz
+            // Hochskalierung auf Folien-/Seitenbreite. Pro-Block via scale=… überschreibbar.
+            "mermaid-scale" to "3",
         ),
     )
 }

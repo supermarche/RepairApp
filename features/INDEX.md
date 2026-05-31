@@ -4,7 +4,7 @@
 > §2 Edge-Cases, §3 Architektur-Lücken, §5 priorisierte Roadmap), fachlich verankert in
 > `docs/konzept.adoc` (Decision-Log) und `docs/runtime-roles/`.
 
-**Next Available ID:** PROJ-38
+**Next Available ID:** PROJ-39
 
 **Status-Legende:** Planned · In Progress · In Review · Done
 
@@ -90,6 +90,7 @@
 | PROJ-35 | LLM-Orchestrator-Schleife | `lotse` | D19/D17/D7 | Done | PROJ-32, 33, 34, 9 |
 | PROJ-36 | Nicht-sperrender Sicherheits-Backstop | Querschnitt | D1/D3/D14/D15/D23 | Done | PROJ-35, 33 |
 | PROJ-37 | Chat-Flow: API & Frontend-Umstellung (harter Schnitt) | `lotse` | D6/D7/D19 | Done | PROJ-35, 36, 9 |
+| PROJ-38 | Responsive Web-Layout statt Handy-Attrappe | Querschnitt/UI | — | Done | PROJ-37 |
 
 > **Hinweis:** Diese Stufe 4 ist ein **harter Schnitt** und **umgesetzt** — sie ersetzt den
 > Single-Shot `POST /api/diagnose` + `device`-Monolith durch `POST /api/vorgang` +

@@ -1,6 +1,6 @@
 # PROJ-38: Responsive Web-Layout statt Handy-Attrappe
 
-## Status: Planned
+## Status: Done
 **Erstellt:** 2026-05-31
 **Zuletzt aktualisiert:** 2026-05-31
 
@@ -46,30 +46,30 @@ funktioniert — **mobil-first**, auf breiten Bildschirmen als **zentrierte Lese
   bedienbar sind (Hover-Zustände, sichtbarer Fokus).
 
 ## Akzeptanzkriterien
-- [ ] `.rk-phone`-Geräterahmen (schwarzer Rand, 46px-Ecken, Geräte-Schlagschatten) wird entfernt;
+- [x] `.rk-phone`-Geräterahmen (schwarzer Rand, 46px-Ecken, Geräte-Schlagschatten) wird entfernt;
       die App rendert direkt in den Seiteninhalt.
-- [ ] Gefälschte Statusleiste (`.rk-statusbar` inkl. „9:41", Signalbalken, Akku-SVG) ist
+- [x] Gefälschte Statusleiste (`.rk-statusbar` inkl. „9:41", Signalbalken, Akku-SVG) ist
       vollständig entfernt — kein DOM-Knoten, keine CSS-Reste.
-- [ ] Home-Indikator (`.rk-home`) ist entfernt.
-- [ ] Feste Maße `384 × 812 px` (`.rk-canvas`) entfallen; der Inhalt nutzt die Viewport-Breite.
-- [ ] Auf schmalen Viewports (≤ ~480px) füllt der Inhalt die volle Breite mit angemessenem
-      seitlichem Innenabstand (kein horizontales Scrollen, kein Beschnitt).
-- [ ] Auf breiten Viewports wird der Inhalt auf eine **maximale Breite** begrenzt und horizontal
-      **zentriert** (Lese-Spalte). Der gewählte max-width-Wert wird im Tech-Design festgelegt.
-- [ ] Die Seite nutzt natürliches Seiten-Scrolling; es gibt keinen separaten Innen-Scrollbereich,
-      der eine Telefon-Hülle simuliert. Eine ggf. vorhandene App-Bar/Footer bleibt funktional.
-- [ ] Theme-Umschalter und Sprach-Umschalter bleiben sichtbar, bedienbar und korrekt
-      positioniert (mobil wie Desktop).
-- [ ] Theme-Wechsel funktioniert weiterhin: Theme-CSS-Variablen werden weiterhin auf den
-      passenden Wurzel-Container gesetzt (vorher `.rk-phone` per inline-style).
-- [ ] Alle bestehenden Screens/Flows (Start, Triage, Diagnose, Bewertung, Vergleich, Vermittlung,
+- [x] Home-Indikator (`.rk-home`) ist entfernt.
+- [x] Feste Maße `384 × 812 px` (`.rk-canvas`) entfallen; der Inhalt nutzt die Viewport-Breite.
+- [x] Auf schmalen Viewports (≤ ~480px) füllt der Inhalt die volle Breite mit angemessenem
+      seitlichem Innenabstand (kein horizontales Scrollen, kein Beschnitt). _Verifiziert: 320/360/390px, kein H-Scroll._
+- [x] Auf breiten Viewports wird der Inhalt auf eine **maximale Breite** begrenzt und horizontal
+      **zentriert** (Lese-Spalte). _max-width: `--app-max` (Default 640px); bei 1280px zentriert verifiziert._
+- [x] Die Seite nutzt natürliches Seiten-Scrolling; es gibt keinen separaten Innen-Scrollbereich,
+      der eine Telefon-Hülle simuliert. _`.rk-body` overflow-y: visible; AppBar/Footer `position: sticky`._
+- [x] Theme-Umschalter und Sprach-Umschalter bleiben sichtbar, bedienbar und korrekt
+      positioniert (mobil wie Desktop). _Im Seitenkopf `.rk-pagehead`._
+- [x] Theme-Wechsel funktioniert weiterhin: Theme-CSS-Variablen werden weiterhin auf den
+      passenden Wurzel-Container gesetzt. _Jetzt direkt auf `.rk-app` (inline-style); Mutig→`--bg:#141118` greift verifiziert._
+- [x] Alle bestehenden Screens/Flows (Start, Triage, Diagnose, Bewertung, Vergleich, Vermittlung,
       Entsorgung, Ersatzteile, Multimodal/Vision-Bestätigung, Protokoll/Export …) rendern korrekt
-      und sind weiterhin vollständig nutzbar — keine inhaltliche Änderung.
-- [ ] Touch-Interaktionen funktionieren weiterhin; zusätzlich gibt es sinnvolle Hover- und
-      sichtbare Fokus-Zustände für Maus/Tastatur.
-- [ ] `viewport`-Meta-Tag bleibt korrekt (`width=device-width, initial-scale=1.0`); kein
+      und sind weiterhin vollständig nutzbar — keine inhaltliche Änderung. _Keine Screen-/Renderer-Logik geändert, nur die Hülle._
+- [x] Touch-Interaktionen funktionieren weiterhin; zusätzlich gibt es sinnvolle Hover- und
+      sichtbare Fokus-Zustände für Maus/Tastatur. _`:focus-visible`-Ring global; Hover via `@media (hover: hover)`._
+- [x] `viewport`-Meta-Tag bleibt korrekt (`width=device-width, initial-scale=1.0`); kein
       doppeltes Skalieren.
-- [ ] Keine toten CSS-Regeln zur Telefon-Hülle bleiben übrig (aufgeräumt, nicht nur überschrieben).
+- [x] Keine toten CSS-Regeln zur Telefon-Hülle bleiben übrig (aufgeräumt, nicht nur überschrieben).
 
 ## Edge Cases
 - **Sehr breiter Monitor (z.B. ≥ 1440px):** Inhalt bleibt zentriert in max-width, kein
@@ -100,10 +100,38 @@ funktioniert — **mobil-first**, auf breiten Bildschirmen als **zentrierte Lese
 <!-- Folgende Abschnitte werden von nachfolgenden Skills hinzugefügt -->
 
 ## Tech Design (Solution Architect)
-_Wird von /architecture hinzugefügt_
+
+Reine Frontend-/CSS-Querschnittsänderung an der Render-Hülle — keine Backend-/API-Änderung.
+
+- **Hülle:** `index.html` rendert `.rk-page > .rk-pagehead (Theme-/Sprach-Switcher) + #phone-root`.
+  Layout vollständig in `repair.css` (Layout-Tokens `--page-bg`, `--app-max` am `:root`).
+- **Lese-Spalte:** `.rk-app` ist die Spalte: mobil volle Breite, ab Inhalt `max-width: var(--app-max)`
+  (Default **640px**), `margin: 0 auto`, `background: var(--bg)`. Ab `min-width: 700px` dünne
+  Seitenränder zur Bühne. Theme-Variablen werden in `app.js` (`buildPhone`) per `style.setProperty`
+  **direkt auf `.rk-app`** gesetzt (vorher am entfernten `.rk-phone`).
+- **Scrolling:** natürliches Seiten-Scrolling (`.rk-body { overflow: visible }`); `.rk-appbar`
+  `position: sticky; top:0`, `.rk-footer` `position: sticky; bottom:0`.
+- **Overlays:** `.rk-sheet-scrim` und `.rk-toast` auf `position: fixed` (viewport-deckend);
+  Sheet/Toast auf Spaltenbreite (`max-width: var(--app-max)`) zentriert.
+- **Entfernt:** `ui.js#PhoneFrame` (+ Export), CSS `.rk-phone/.rk-statusbar/.rk-time/.rk-status-right/
+  .rk-bars/.rk-batt/.rk-screen/.rk-home/.rk-canvas`, JS `State.phoneEl`. `SPEC.md`
+  (Klassen-/Theme-Token-Vertrag) nachgezogen.
 
 ## QA Test Results
-_Wird von /qa hinzugefügt_
+
+Manuell im Browser (Playwright, `python app.py` ohne OPENAI-Key) verifiziert:
+
+- **Desktop (1280×860):** zentrierte 640px-Lesespalte auf neutraler Bühne, sticky AppBar oben,
+  sticky Eingabe-Footer unten, keine Telefon-Hülle. ✅
+- **Mobil (390/360px) & schmal (320px):** volle Breite, kein horizontales Scrollen
+  (`scrollWidth == clientWidth`), 0 Phone-Chrome-Knoten (`.rk-phone/.rk-statusbar/.rk-home/.rk-canvas`). ✅
+- **Natürliches Scrolling:** `.rk-body` `overflow-y: visible`; AppBar/Footer `position: sticky`. ✅
+- **Theme-Wechsel:** Klick „Mutig" → `.rk-app` erhält `rk-theme-mutig`, `--bg:#141118` und dunkler
+  `background-color` greifen (keine farblosen Screens). ✅
+- **Overlay:** injiziertes `.rk-sheet-scrim` ist `position: fixed`, deckt den Viewport
+  (390×760) vollständig, Sheet auf Spaltenbreite zentriert. ✅
+- **Konsole:** keine JS-Fehler (nur favicon-404 + Tailwind-CDN-Hinweis, beide vorbestehend). ✅
+- **JS-Syntax:** `node --check` für `ui.js` und `app.js` grün. ✅
 
 ## Deployment
 _Wird von /deploy hinzugefügt_

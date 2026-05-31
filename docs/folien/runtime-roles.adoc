@@ -9,6 +9,14 @@
 //   * 14 Rollen-Folien, je zweispaltig: links derselbe Ablauf-Graph (mermaid, TB)
 //     mit der AKTIVEN Rolle hervorgehoben, rechts die Details der Rolle.
 //
+// Reihenfolge — WICHTIG: Die Folgen sind bewusst NARRATIV (just-in-time)
+// geordnet, NICHT taxonomisch nach Klasse (anders als die README-Tabelle): jede
+// Querschnitts-/Back-Office-Rolle steht direkt dort, wo sie in der Journey zum
+// ersten Mal genutzt wird (protokoll nach aufnahme, recherche+wissensbasis nach
+// diagnose, vermittlung nach bewertung, beschaffung nach begleitung). So wird
+// keine Rolle benutzt, bevor sie erklärt ist. Bitte beim Pflegen NICHT wieder
+// nach Klassen sortieren.
+//
 // Pflege-Hinweis: Die 14 linken Graphen sind bewusst fast identisch — sie
 // unterscheiden sich nur in der `class <rolle> active`-Zeile. Mermaid kann hier
 // nicht parametrisiert werden; jeder Block muss ein eigenständiges PNG ergeben.
@@ -61,13 +69,26 @@ flowchart LR
   recherche -.-> diagnose
   vermittlung -.-> bewertung
   beschaffung -.-> begleitung
-  protokoll -. Zustands-Bus .-> abwaegung
+  protokoll -.- aufnahme
+  protokoll -.- diagnose
+  protokoll -.- bewertung
+  protokoll -.- abwaegung
+  protokoll -.- begleitung
+  protokoll -.- produktsuche
+  protokoll -.- entsorgung
+  protokoll -.- wirkung
   wissensbasis -.-> recherche
+  linkStyle 14,15,16,17,18,19,20,21 stroke:#7dd3fc,stroke-width:1px
 ....
 
 [.small]
 *Farbkodierung der Klassen:* Orchestrierung (lila) · Journey-Schritt (grün) ·
 Alternativpfad (orange) · Querschnittsdienst (blau) · Back-Office (grau).
+
+[.small]
+*Pfeile:* durchgezogen = Handoff (Vorgangsfluss) · gestrichelt = speist/liefert an
+(Daten/Wissen) · hellblau-gestrichelt = `protokoll` als Zustands-Bus, den _alle_
+Rollen entlang der Journey lesen und schreiben.
 
 
 // =====================  lotse  ==============================================
@@ -104,7 +125,6 @@ flowchart TB
   recherche -.-> diagnose
   vermittlung -.-> bewertung
   beschaffung -.-> begleitung
-  protokoll -.-> abwaegung
   wissensbasis -.-> recherche
   class lotse active
 ....
@@ -160,7 +180,6 @@ flowchart TB
   recherche -.-> diagnose
   vermittlung -.-> bewertung
   beschaffung -.-> begleitung
-  protokoll -.-> abwaegung
   wissensbasis -.-> recherche
   class aufnahme active
 ....
@@ -179,6 +198,65 @@ sicherheitskritisches.
 * Eigentum/Kostenträger klären (D14); Tagebuch-Wiedererkennung
 
 *Übergabe* → `diagnose` · schreibt über `protokoll`
+|===
+
+
+// =====================  protokoll  ==========================================
+// Direkt nach 'aufnahme': diese legt das Protokoll als erste an; ab hier greift
+// JEDER Journey-Schritt lesend und schreibend darauf zu (Zustands-Bus).
+<<<
+== protokoll
+
+[cols="11a,9a", frame=none, grid=none]
+|===
+|
+[mermaid]
+....
+flowchart TB
+  classDef dim fill:#eef0f2,stroke:#cbd5e1,color:#94a3b8
+  classDef active fill:#bae6fd,stroke:#0284c7,stroke-width:3px,color:#082f49
+  lotse([lotse]):::dim
+  aufnahme[aufnahme]:::dim
+  diagnose[diagnose]:::dim
+  bewertung[bewertung]:::dim
+  abwaegung{abwägung}:::dim
+  begleitung[begleitung]:::dim
+  produktsuche[produktsuche]:::dim
+  entsorgung[entsorgung]:::dim
+  wirkung[wirkung]:::dim
+  recherche[recherche]:::dim
+  vermittlung[vermittlung]:::dim
+  beschaffung[beschaffung]:::dim
+  protokoll[protokoll]:::dim
+  wissensbasis[wissensbasis]:::dim
+  lotse -.-> aufnahme
+  aufnahme --> diagnose --> bewertung --> abwaegung
+  abwaegung --> begleitung --> wirkung
+  abwaegung --> produktsuche --> wirkung
+  abwaegung --> entsorgung --> wirkung
+  recherche -.-> diagnose
+  vermittlung -.-> bewertung
+  beschaffung -.-> begleitung
+  wissensbasis -.-> recherche
+  class protokoll active
+....
+
+|
+*Klasse:* Querschnittsdienst · _Zustands-Bus_
+
+*Aufgabe* +
+`aufnahme` legt das gemeinsame Vorgangs-Protokoll an — ab hier greift *jeder*
+Journey-Schritt darauf zurück: `diagnose`, `bewertung`, `abwägung`, `begleitung` /
+`produktsuche` / `entsorgung` und `wirkung` lesen daraus und schreiben hinein.
+Der Zustands-Bus des gesamten Vorgangs.
+
+*Verantwortung*
+
+* Portables Artefakt: Brücke DIY ↔ Profi (exportier-/teilbar)
+* KI-Entscheidungsprotokoll (Quelle/Konfidenz, D3); Reparatur-Tagebuch
+* Daten-Schwungrad mit Consent; Eigentums-/Kostenträger-Vermerk (D14)
+
+*Übergabe* Zustands-Bus für _alle_ Rollen · speist mit Consent `wissensbasis`
 |===
 
 
@@ -216,7 +294,6 @@ flowchart TB
   recherche -.-> diagnose
   vermittlung -.-> bewertung
   beschaffung -.-> begleitung
-  protokoll -.-> abwaegung
   wissensbasis -.-> recherche
   class diagnose active
 ....
@@ -234,6 +311,117 @@ Schließt von den aufgenommenen Symptomen auf die wahrscheinliche Ursache.
 * Vertrauens-Indikator (D3): Konfidenz + Begründung je Aussage
 
 *Übergabe* → `bewertung` · nutzt `recherche`
+|===
+
+
+// =====================  recherche  ==========================================
+// Direkt nach 'diagnose': hier wird recherche zum ersten Mal genutzt.
+<<<
+== recherche
+
+[cols="11a,9a", frame=none, grid=none]
+|===
+|
+[mermaid]
+....
+flowchart TB
+  classDef dim fill:#eef0f2,stroke:#cbd5e1,color:#94a3b8
+  classDef active fill:#bae6fd,stroke:#0284c7,stroke-width:3px,color:#082f49
+  lotse([lotse]):::dim
+  aufnahme[aufnahme]:::dim
+  diagnose[diagnose]:::dim
+  bewertung[bewertung]:::dim
+  abwaegung{abwägung}:::dim
+  begleitung[begleitung]:::dim
+  produktsuche[produktsuche]:::dim
+  entsorgung[entsorgung]:::dim
+  wirkung[wirkung]:::dim
+  recherche[recherche]:::dim
+  vermittlung[vermittlung]:::dim
+  beschaffung[beschaffung]:::dim
+  protokoll[protokoll]:::dim
+  wissensbasis[wissensbasis]:::dim
+  lotse -.-> aufnahme
+  aufnahme --> diagnose --> bewertung --> abwaegung
+  abwaegung --> begleitung --> wirkung
+  abwaegung --> produktsuche --> wirkung
+  abwaegung --> entsorgung --> wirkung
+  recherche -.-> diagnose
+  vermittlung -.-> bewertung
+  beschaffung -.-> begleitung
+  wissensbasis -.-> recherche
+  class recherche active
+....
+
+|
+*Klasse:* Querschnittsdienst
+
+*Aufgabe* +
+Beschafft und belegt Wissen für andere Rollen — statt selbst zu diagnostizieren
+oder zu bewerten.
+
+*Verantwortung*
+
+* Kuratierte Quellen zuerst (iFixit, Hersteller) — mit Quelle belegen
+* Fallback: Online-Recherche, deutlich als KI-Eigenrecherche gekennzeichnet
+* Konfidenz + Herkunft je Aussage (Grundlage D3)
+
+*Genutzt von* `diagnose`, `bewertung`, `abwaegung` · speist sich aus `wissensbasis`
+|===
+
+
+// =====================  wissensbasis  =======================================
+// Bei 'recherche': die Wissensbasis speist recherche (Back-Office).
+<<<
+== wissensbasis
+
+[cols="11a,9a", frame=none, grid=none]
+|===
+|
+[mermaid]
+....
+flowchart TB
+  classDef dim fill:#eef0f2,stroke:#cbd5e1,color:#94a3b8
+  classDef active fill:#e5e7eb,stroke:#6b7280,stroke-width:3px,color:#111827
+  lotse([lotse]):::dim
+  aufnahme[aufnahme]:::dim
+  diagnose[diagnose]:::dim
+  bewertung[bewertung]:::dim
+  abwaegung{abwägung}:::dim
+  begleitung[begleitung]:::dim
+  produktsuche[produktsuche]:::dim
+  entsorgung[entsorgung]:::dim
+  wirkung[wirkung]:::dim
+  recherche[recherche]:::dim
+  vermittlung[vermittlung]:::dim
+  beschaffung[beschaffung]:::dim
+  protokoll[protokoll]:::dim
+  wissensbasis[wissensbasis]:::dim
+  lotse -.-> aufnahme
+  aufnahme --> diagnose --> bewertung --> abwaegung
+  abwaegung --> begleitung --> wirkung
+  abwaegung --> produktsuche --> wirkung
+  abwaegung --> entsorgung --> wirkung
+  recherche -.-> diagnose
+  vermittlung -.-> bewertung
+  beschaffung -.-> begleitung
+  wissensbasis -.-> recherche
+  class wissensbasis active
+....
+
+|
+*Klasse:* Back-Office (nicht pro Fall)
+
+*Aufgabe* +
+Pflegt die Wissensgrundlage, aus der sich `recherche` / `diagnose` bedienen.
+
+*Verantwortung*
+
+* Fehlerzustand-Sammlung kuratieren; Sicherheits-Einstufung bleibt menschlich (D5)
+* Daten-Schwungrad betreiben (anonymisierte Protokolle einarbeiten)
+* Förder- und Quellenlisten pflegen („Stand / gültig-bis", D13)
+
+*Übergabe* versorgt `recherche` / `diagnose` · bezieht aus `protokoll`
 |===
 
 
@@ -271,7 +459,6 @@ flowchart TB
   recherche -.-> diagnose
   vermittlung -.-> bewertung
   beschaffung -.-> begleitung
-  protokoll -.-> abwaegung
   wissensbasis -.-> recherche
   class bewertung active
 ....
@@ -290,6 +477,62 @@ sperren".
 * Haftungshinweis (D16), skalierende Warnung, Vertrauens-Indikator (D3)
 
 *Übergabe* → `abwaegung` · nutzt `vermittlung`, `recherche`
+|===
+
+
+// =====================  vermittlung  ========================================
+// Direkt nach 'bewertung': hier wird vermittlung (Profi/Café) zum ersten Mal genutzt.
+<<<
+== vermittlung
+
+[cols="11a,9a", frame=none, grid=none]
+|===
+|
+[mermaid]
+....
+flowchart TB
+  classDef dim fill:#eef0f2,stroke:#cbd5e1,color:#94a3b8
+  classDef active fill:#bae6fd,stroke:#0284c7,stroke-width:3px,color:#082f49
+  lotse([lotse]):::dim
+  aufnahme[aufnahme]:::dim
+  diagnose[diagnose]:::dim
+  bewertung[bewertung]:::dim
+  abwaegung{abwägung}:::dim
+  begleitung[begleitung]:::dim
+  produktsuche[produktsuche]:::dim
+  entsorgung[entsorgung]:::dim
+  wirkung[wirkung]:::dim
+  recherche[recherche]:::dim
+  vermittlung[vermittlung]:::dim
+  beschaffung[beschaffung]:::dim
+  protokoll[protokoll]:::dim
+  wissensbasis[wissensbasis]:::dim
+  lotse -.-> aufnahme
+  aufnahme --> diagnose --> bewertung --> abwaegung
+  abwaegung --> begleitung --> wirkung
+  abwaegung --> produktsuche --> wirkung
+  abwaegung --> entsorgung --> wirkung
+  recherche -.-> diagnose
+  vermittlung -.-> bewertung
+  beschaffung -.-> begleitung
+  wissensbasis -.-> recherche
+  class vermittlung active
+....
+
+|
+*Klasse:* Querschnittsdienst
+
+*Aufgabe* +
+Findet Menschen und Orte, die helfen — Repair Cafés, Werkstätten,
+Reparaturbetriebe.
+
+*Verantwortung*
+
+* Anbieter/Standorte zu Gerät und Ort ermitteln
+* Offene Datenbanken (reparatur-initiativen.de), ggf. OpenStreetMap
+* Ehrenamtlich (Repair Café) vs. wirtschaftlich unterscheiden
+
+*Genutzt von* `bewertung` (Profi/Café), `abwaegung`
 |===
 
 
@@ -327,7 +570,6 @@ flowchart TB
   recherche -.-> diagnose
   vermittlung -.-> bewertung
   beschaffung -.-> begleitung
-  protokoll -.-> abwaegung
   wissensbasis -.-> recherche
   class abwaegung active
 ....
@@ -383,7 +625,6 @@ flowchart TB
   recherche -.-> diagnose
   vermittlung -.-> bewertung
   beschaffung -.-> begleitung
-  protokoll -.-> abwaegung
   wissensbasis -.-> recherche
   class begleitung active
 ....
@@ -401,6 +642,61 @@ Konkrete Schritt-für-Schritt-DIY-Anleitung mit adaptiver Tiefe.
 * Misserfolgs-Pfad: sicherer Rückweg zur Fachkraft, ermutigende Rahmung
 
 *Übergabe* → `wirkung` · nutzt `beschaffung`, `recherche`
+|===
+
+
+// =====================  beschaffung  ========================================
+// Direkt nach 'begleitung': hier werden Ersatzteile zum ersten Mal beschafft.
+<<<
+== beschaffung
+
+[cols="11a,9a", frame=none, grid=none]
+|===
+|
+[mermaid]
+....
+flowchart TB
+  classDef dim fill:#eef0f2,stroke:#cbd5e1,color:#94a3b8
+  classDef active fill:#bae6fd,stroke:#0284c7,stroke-width:3px,color:#082f49
+  lotse([lotse]):::dim
+  aufnahme[aufnahme]:::dim
+  diagnose[diagnose]:::dim
+  bewertung[bewertung]:::dim
+  abwaegung{abwägung}:::dim
+  begleitung[begleitung]:::dim
+  produktsuche[produktsuche]:::dim
+  entsorgung[entsorgung]:::dim
+  wirkung[wirkung]:::dim
+  recherche[recherche]:::dim
+  vermittlung[vermittlung]:::dim
+  beschaffung[beschaffung]:::dim
+  protokoll[protokoll]:::dim
+  wissensbasis[wissensbasis]:::dim
+  lotse -.-> aufnahme
+  aufnahme --> diagnose --> bewertung --> abwaegung
+  abwaegung --> begleitung --> wirkung
+  abwaegung --> produktsuche --> wirkung
+  abwaegung --> entsorgung --> wirkung
+  recherche -.-> diagnose
+  vermittlung -.-> bewertung
+  beschaffung -.-> begleitung
+  wissensbasis -.-> recherche
+  class beschaffung active
+....
+
+|
+*Klasse:* Querschnittsdienst
+
+*Aufgabe* +
+Findet Ersatzteile und macht sie über die integrierte Bestellung verfügbar.
+
+*Verantwortung*
+
+* Benötigte Teile/Werkzeug bestimmen, Bezugsquellen nennen
+* Integrierte Bestellung — nachgelagert und transparent gekennzeichnet
+* D8-Leitplanke: die Empfehlung folgt _immer_ der Warn-Ampel
+
+*Genutzt von* `begleitung`, `abwaegung`
 |===
 
 
@@ -438,7 +734,6 @@ flowchart TB
   recherche -.-> diagnose
   vermittlung -.-> bewertung
   beschaffung -.-> begleitung
-  protokoll -.-> abwaegung
   wissensbasis -.-> recherche
   class wirkung active
 ....
@@ -494,7 +789,6 @@ flowchart TB
   recherche -.-> diagnose
   vermittlung -.-> bewertung
   beschaffung -.-> begleitung
-  protokoll -.-> abwaegung
   wissensbasis -.-> recherche
   class produktsuche active
 ....
@@ -548,7 +842,6 @@ flowchart TB
   recherche -.-> diagnose
   vermittlung -.-> bewertung
   beschaffung -.-> begleitung
-  protokoll -.-> abwaegung
   wissensbasis -.-> recherche
   class entsorgung active
 ....
@@ -566,282 +859,4 @@ reparierbar ist.
 * Rohstoff- und Umwelt-Aspekt der korrekten Entsorgung einordnen
 
 *Übergabe* ← `abwaegung` → `wirkung`
-|===
-
-
-// =====================  recherche  ==========================================
-<<<
-== recherche
-
-[cols="11a,9a", frame=none, grid=none]
-|===
-|
-[mermaid]
-....
-flowchart TB
-  classDef dim fill:#eef0f2,stroke:#cbd5e1,color:#94a3b8
-  classDef active fill:#bae6fd,stroke:#0284c7,stroke-width:3px,color:#082f49
-  lotse([lotse]):::dim
-  aufnahme[aufnahme]:::dim
-  diagnose[diagnose]:::dim
-  bewertung[bewertung]:::dim
-  abwaegung{abwägung}:::dim
-  begleitung[begleitung]:::dim
-  produktsuche[produktsuche]:::dim
-  entsorgung[entsorgung]:::dim
-  wirkung[wirkung]:::dim
-  recherche[recherche]:::dim
-  vermittlung[vermittlung]:::dim
-  beschaffung[beschaffung]:::dim
-  protokoll[protokoll]:::dim
-  wissensbasis[wissensbasis]:::dim
-  lotse -.-> aufnahme
-  aufnahme --> diagnose --> bewertung --> abwaegung
-  abwaegung --> begleitung --> wirkung
-  abwaegung --> produktsuche --> wirkung
-  abwaegung --> entsorgung --> wirkung
-  recherche -.-> diagnose
-  vermittlung -.-> bewertung
-  beschaffung -.-> begleitung
-  protokoll -.-> abwaegung
-  wissensbasis -.-> recherche
-  class recherche active
-....
-
-|
-*Klasse:* Querschnittsdienst
-
-*Aufgabe* +
-Beschafft und belegt Wissen für andere Rollen — statt selbst zu diagnostizieren
-oder zu bewerten.
-
-*Verantwortung*
-
-* Kuratierte Quellen zuerst (iFixit, Hersteller) — mit Quelle belegen
-* Fallback: Online-Recherche, deutlich als KI-Eigenrecherche gekennzeichnet
-* Konfidenz + Herkunft je Aussage (Grundlage D3)
-
-*Genutzt von* `diagnose`, `bewertung`, `abwaegung` · speist sich aus `wissensbasis`
-|===
-
-
-// =====================  vermittlung  ========================================
-<<<
-== vermittlung
-
-[cols="11a,9a", frame=none, grid=none]
-|===
-|
-[mermaid]
-....
-flowchart TB
-  classDef dim fill:#eef0f2,stroke:#cbd5e1,color:#94a3b8
-  classDef active fill:#bae6fd,stroke:#0284c7,stroke-width:3px,color:#082f49
-  lotse([lotse]):::dim
-  aufnahme[aufnahme]:::dim
-  diagnose[diagnose]:::dim
-  bewertung[bewertung]:::dim
-  abwaegung{abwägung}:::dim
-  begleitung[begleitung]:::dim
-  produktsuche[produktsuche]:::dim
-  entsorgung[entsorgung]:::dim
-  wirkung[wirkung]:::dim
-  recherche[recherche]:::dim
-  vermittlung[vermittlung]:::dim
-  beschaffung[beschaffung]:::dim
-  protokoll[protokoll]:::dim
-  wissensbasis[wissensbasis]:::dim
-  lotse -.-> aufnahme
-  aufnahme --> diagnose --> bewertung --> abwaegung
-  abwaegung --> begleitung --> wirkung
-  abwaegung --> produktsuche --> wirkung
-  abwaegung --> entsorgung --> wirkung
-  recherche -.-> diagnose
-  vermittlung -.-> bewertung
-  beschaffung -.-> begleitung
-  protokoll -.-> abwaegung
-  wissensbasis -.-> recherche
-  class vermittlung active
-....
-
-|
-*Klasse:* Querschnittsdienst
-
-*Aufgabe* +
-Findet Menschen und Orte, die helfen — Repair Cafés, Werkstätten,
-Reparaturbetriebe.
-
-*Verantwortung*
-
-* Anbieter/Standorte zu Gerät und Ort ermitteln
-* Offene Datenbanken (reparatur-initiativen.de), ggf. OpenStreetMap
-* Ehrenamtlich (Repair Café) vs. wirtschaftlich unterscheiden
-
-*Genutzt von* `bewertung` (Profi/Café), `abwaegung`
-|===
-
-
-// =====================  beschaffung  ========================================
-<<<
-== beschaffung
-
-[cols="11a,9a", frame=none, grid=none]
-|===
-|
-[mermaid]
-....
-flowchart TB
-  classDef dim fill:#eef0f2,stroke:#cbd5e1,color:#94a3b8
-  classDef active fill:#bae6fd,stroke:#0284c7,stroke-width:3px,color:#082f49
-  lotse([lotse]):::dim
-  aufnahme[aufnahme]:::dim
-  diagnose[diagnose]:::dim
-  bewertung[bewertung]:::dim
-  abwaegung{abwägung}:::dim
-  begleitung[begleitung]:::dim
-  produktsuche[produktsuche]:::dim
-  entsorgung[entsorgung]:::dim
-  wirkung[wirkung]:::dim
-  recherche[recherche]:::dim
-  vermittlung[vermittlung]:::dim
-  beschaffung[beschaffung]:::dim
-  protokoll[protokoll]:::dim
-  wissensbasis[wissensbasis]:::dim
-  lotse -.-> aufnahme
-  aufnahme --> diagnose --> bewertung --> abwaegung
-  abwaegung --> begleitung --> wirkung
-  abwaegung --> produktsuche --> wirkung
-  abwaegung --> entsorgung --> wirkung
-  recherche -.-> diagnose
-  vermittlung -.-> bewertung
-  beschaffung -.-> begleitung
-  protokoll -.-> abwaegung
-  wissensbasis -.-> recherche
-  class beschaffung active
-....
-
-|
-*Klasse:* Querschnittsdienst
-
-*Aufgabe* +
-Findet Ersatzteile und macht sie über die integrierte Bestellung verfügbar.
-
-*Verantwortung*
-
-* Benötigte Teile/Werkzeug bestimmen, Bezugsquellen nennen
-* Integrierte Bestellung — nachgelagert und transparent gekennzeichnet
-* D8-Leitplanke: die Empfehlung folgt _immer_ der Warn-Ampel
-
-*Genutzt von* `begleitung`, `abwaegung`
-|===
-
-
-// =====================  protokoll  ==========================================
-<<<
-== protokoll
-
-[cols="11a,9a", frame=none, grid=none]
-|===
-|
-[mermaid]
-....
-flowchart TB
-  classDef dim fill:#eef0f2,stroke:#cbd5e1,color:#94a3b8
-  classDef active fill:#bae6fd,stroke:#0284c7,stroke-width:3px,color:#082f49
-  lotse([lotse]):::dim
-  aufnahme[aufnahme]:::dim
-  diagnose[diagnose]:::dim
-  bewertung[bewertung]:::dim
-  abwaegung{abwägung}:::dim
-  begleitung[begleitung]:::dim
-  produktsuche[produktsuche]:::dim
-  entsorgung[entsorgung]:::dim
-  wirkung[wirkung]:::dim
-  recherche[recherche]:::dim
-  vermittlung[vermittlung]:::dim
-  beschaffung[beschaffung]:::dim
-  protokoll[protokoll]:::dim
-  wissensbasis[wissensbasis]:::dim
-  lotse -.-> aufnahme
-  aufnahme --> diagnose --> bewertung --> abwaegung
-  abwaegung --> begleitung --> wirkung
-  abwaegung --> produktsuche --> wirkung
-  abwaegung --> entsorgung --> wirkung
-  recherche -.-> diagnose
-  vermittlung -.-> bewertung
-  beschaffung -.-> begleitung
-  protokoll -.-> abwaegung
-  wissensbasis -.-> recherche
-  class protokoll active
-....
-
-|
-*Klasse:* Querschnittsdienst · _Zustands-Bus_
-
-*Aufgabe* +
-Erzeugt und verwaltet das Problemaufnahme-Protokoll, durch das alle Rollen lesen
-und schreiben.
-
-*Verantwortung*
-
-* Portables Artefakt: Brücke DIY ↔ Profi (exportier-/teilbar)
-* KI-Entscheidungsprotokoll (Quelle/Konfidenz, D3); Reparatur-Tagebuch
-* Daten-Schwungrad mit Consent; Eigentums-/Kostenträger-Vermerk (D14)
-
-*Übergabe* Zustands-Bus für _alle_ Rollen · speist mit Consent `wissensbasis`
-|===
-
-
-// =====================  wissensbasis  =======================================
-<<<
-== wissensbasis
-
-[cols="11a,9a", frame=none, grid=none]
-|===
-|
-[mermaid]
-....
-flowchart TB
-  classDef dim fill:#eef0f2,stroke:#cbd5e1,color:#94a3b8
-  classDef active fill:#e5e7eb,stroke:#6b7280,stroke-width:3px,color:#111827
-  lotse([lotse]):::dim
-  aufnahme[aufnahme]:::dim
-  diagnose[diagnose]:::dim
-  bewertung[bewertung]:::dim
-  abwaegung{abwägung}:::dim
-  begleitung[begleitung]:::dim
-  produktsuche[produktsuche]:::dim
-  entsorgung[entsorgung]:::dim
-  wirkung[wirkung]:::dim
-  recherche[recherche]:::dim
-  vermittlung[vermittlung]:::dim
-  beschaffung[beschaffung]:::dim
-  protokoll[protokoll]:::dim
-  wissensbasis[wissensbasis]:::dim
-  lotse -.-> aufnahme
-  aufnahme --> diagnose --> bewertung --> abwaegung
-  abwaegung --> begleitung --> wirkung
-  abwaegung --> produktsuche --> wirkung
-  abwaegung --> entsorgung --> wirkung
-  recherche -.-> diagnose
-  vermittlung -.-> bewertung
-  beschaffung -.-> begleitung
-  protokoll -.-> abwaegung
-  wissensbasis -.-> recherche
-  class wissensbasis active
-....
-
-|
-*Klasse:* Back-Office (nicht pro Fall)
-
-*Aufgabe* +
-Pflegt die Wissensgrundlage, aus der sich `recherche` / `diagnose` bedienen.
-
-*Verantwortung*
-
-* Fehlerzustand-Sammlung kuratieren; Sicherheits-Einstufung bleibt menschlich (D5)
-* Daten-Schwungrad betreiben (anonymisierte Protokolle einarbeiten)
-* Förder- und Quellenlisten pflegen („Stand / gültig-bis", D13)
-
-*Übergabe* versorgt `recherche` / `diagnose` · bezieht aus `protokoll`
 |===

@@ -1,9 +1,13 @@
-= Repair App — Präsentation
+= RepairApp
 Reparatur-App Team
 :revdate: {docdate}
 // --- Folien-Format (Querformat, eine Folie pro Seite) ---
 :pdf-page-layout: landscape
 :pdf-page-size: A4
+:pdf-theme: praesentation
+:pdf-themesdir: {docdir}
+:pagennums:
+
 // --- Darstellung ---
 :icons: font
 :sectids!:
@@ -31,110 +35,146 @@ Reparatur-App Team
 
 // =====================  FOLIE 1 — Titel  =====================================
 [.text-center]
-== Repair App
 
+****
 [.lead]
-KI-gestützte Hilfe bei der Entscheidung *Reparatur oder Neukauf* — und Begleitung
-durch die Reparatur.
+Vom Defekt zur Entscheidung in einem klaren Schritt.
 
 [.text-center]
-_Reparatur-App Team · {revdate}_
+*Diagnose* · *Vergleich* · *Begleitung*
 
-
-// =====================  FOLIE 2 — Agenda  ====================================
-<<<
-== Agenda
-
-[%step]
-. Ausgangslage & Problem
-. Vision der App
-. Wie es funktioniert (Demo)
-. Architektur im Überblick
-. Nächste Schritte
-
-NOTE: Sprecher-Notizen können als `NOTE`/`TIP`-Block hinterlegt werden — sie
-erscheinen sichtbar auf der Folie. (Für echte verborgene Speaker-Notes bräuchte
-es das reveal.js-Backend.)
-
-
-// =====================  FOLIE 3 — Aufzählung  ================================
-<<<
-== Das Problem
-
-* Geräte werden zu früh weggeworfen — oft wäre eine Reparatur möglich.
-* Nutzer fehlt das Wissen: *Was ist kaputt? Lohnt sich die Reparatur?*
-* Hürden: Ersatzteile finden, Werkstatt finden, Fördermittel kennen.
-* Folge: unnötiger Elektroschrott, vermeidbare Kosten.
-
-
-// =====================  FOLIE 4 — Zwei Spalten  ==============================
-<<<
-== Reparatur vs. Neukauf
-
-[cols="1a,1a", frame=none, grid=none]
-|===
-|
-.Reparatur 🟢
-* Ressourcen schonen
-* meist günstiger
-* Selbstwirksamkeit stärken
-* Fördermittel möglich
-
-|
-.Neukauf 🔴
-* Neueinrichtung & Einlernen
-* Transport & Entsorgung
-* höhere Kosten
-* Ausfallzeit
-|===
-
-
-// =====================  FOLIE 5 — Drei Werthebel  ===========================
-<<<
-== Drei Werthebel
-
-[cols="1,3", frame=none, grid=rows]
-|===
-| 🌱 *Ökologisch* | Reparatur als nachhaltige Alternative sichtbar machen.
-| 💶 *Finanziell* | Den echten Mehrwert gegenüber dem Neukauf aufzeigen.
-| 🤝 *Sozial*     | Selbstwirksamkeit fördern — sich mehr zutrauen.
-|===
-
-
-// =====================  FOLIE 6 — Bild / Screenshot  ========================
-<<<
-== Screenshot / Bild einbinden
-
-So bindet man ein Bild zentriert ein (Bild unter `docs/` ablegen, relativ referenzieren):
-
-[source,asciidoc]
-----
 [.text-center]
-image::pfad/zum/screenshot.png[Alt-Text,width=55%]
-----
+_Markus, Jörg, Pawel, Max, Robert und Marc · {revdate}_
+****
 
-TIP: Sobald eine echte Bilddatei vorliegt, die Zeile oben aus dem Listing
-übernehmen und ohne `----`-Rahmen einfügen — dann wird das Bild gerendert.
-
-
-// =====================  FOLIE 7 — Code / Quote  =============================
+// =====================  FOLIE 2 — Herausforderung  ===================================
 <<<
-== Code & Zitat
+== Die Herausforderung
 
-[source,json]
+****
+[.lead]
+Reparatur scheitert selten am Willen, meist an Unsicherheit.
+
+[cols="1,1,1", frame=none, grid=cols]
+|===
+a|[.text-center]
+*Was ist kaputt?*
+
+Die Ursache ist oft unklar. Klarheit besteht darüber was *nicht* geht.
+
+a|[.text-center]
+*Lohnt es sich?*
+
+Kosten und Aufwand sind schwer einschätzbar.
+
+a|[.text-center]
+*Wer hilft?*
+
+Die Informationen über Werkstätten, Ersatzteile und Förderungen sind über verschiedene Quellen verstreut.
+|===
+****
+
+
+// =====================  FOLIE 3 — Lösung  ===================================
+<<<
+== Die Lösung
+
+****
+[.lead]
+Repair App bündelt Wissen, Bewertung und nächste Schritte.
+
+[.text-center]
+*Erkennen · Bewerten · Handeln*
+
+[cols="1,1,1", frame=none, grid=cols]
+|===
+a|[.text-center]
+*1. Erkennen*
+
+Symptome und Gerät einordnen.
+
+a|[.text-center]
+*2. Bewerten*
+
+Risiko, Aufwand und Kosten abwägen.
+
+a|[.text-center]
+*3. Handeln*
+
+Reparatur, Ersatzteil oder Werkstatt empfehlen.
+|===
+****
+
+
+// =====================  FOLIE 4 — Produktidee  ===============================
+<<<
+== So wirkt das Produkt
+
+****
+[.text-center]
+
+Ein klares Urteil statt Bauchgefühl. Ein nächster Schritt statt Informationssuche.
+
+[cols="1,1,1", frame=none, grid=cols]
+|===
+a|[.text-center]
+*Weniger Reibung*
+
+Schneller verstehen.
+
+a|[.text-center]
+*Mehr Sicherheit*
+
+Besser entscheiden.
+
+a|[.text-center]
+*Mehr Selbstwirksamkeit*
+
+Selbst reparieren oder gezielt Hilfe holen.
+|===
+****
+
+
+// =====================  FOLIE 5 — Wert  =====================================
+<<<
+== Warum das zählt
+
+****
+[.text-center]
+*Ökologisch* · *Finanziell* · *Sozial*
+
+Weniger Wegwerfen, mehr Wiederverwenden.
+Reparatur wird wieder vergleichbar.
+Menschen trauen sich wieder mehr zu.
+****
+
+
+// =====================  FOLIE 6 — Demo  =====================================
+<<<
+== Demo / Kernidee
+
+****
 ----
-POST /api/diagnose
-{ "text": "Mein Toaster wirft nicht mehr aus" }
+POST /api/triage
+{ "device": "Toaster", "problem": "springt nicht mehr aus" }
 ----
 
-[quote, Projektleitbild]
-Bewusstsein schaffen, dass eine Reparatur in vielen Fällen die sinnvollere
-Alternative ist — und konkrete Hilfsmittel an die Hand geben.
+[.text-center]
+Die Antwort ist nicht nur eine Diagnose, sondern eine Handlungsempfehlung.
+****
 
 
-// =====================  Folien: App-Laufzeit-Rollen  ========================
-// Übersicht + je eine Detail-Folie pro Rolle (Quelle: docs/runtime-roles/).
-include::folien/runtime-roles.adoc[]
+// =====================  FOLIE 7 — Nächster Schritt  ==========================
+<<<
+== Nächster Schritt
+
+****
+[.lead]
+Beta mit häufigen Haushaltsgeräten, klarer Ampel und direkter Vermittlung.
+
+[.text-center]
+*Beta* · *Werkstätten* · *Ersatzteile*
+****
 
 
 // =====================  FOLIE 8 — Abschluss  ================================
@@ -142,11 +182,16 @@ include::folien/runtime-roles.adoc[]
 [.text-center]
 == Vielen Dank
 
+****
 [.lead]
-Fragen & Diskussion
+Fragen und Diskussion
 
 [.text-center]
-_Kontakt / Repo: RepairApp_
+_Kontakt / Repo: github.com/supermarche/RepairApp_
+****
+
+// ===================== Backup Slides =========================================
+include::folien/runtime-roles.adoc[]
 
 
 // =============================================================================

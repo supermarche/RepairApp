@@ -111,3 +111,5 @@ Quellen:
  * https://www.makers-united.de/makerspaces
  * https://www.engagiertes-goerlitz.de/news/detail/69-Neuer-Raum-fuer-Selbstmachmotivierte
  * https://www.goerlitz.de/projekte/detail/20-MakerSpace
+ * https://lokallabore.de/lokallabore/loebau
+   * https://makerspace.loebaulebt.de

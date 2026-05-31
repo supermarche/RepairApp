@@ -1,25 +1,4 @@
-https://overpass-turbo.eu
-
-[out:json][timeout:25];
-// gather results
-nwr["amenity"="coworking_space"]({{bbox}});
-// print results
-out geom;
-
-[out:json][timeout:25];
-// gather results
-nwr["leisure"="hackerspace"]({{bbox}});
-// print results
-out geom;
-
-[out:json][timeout:25];
-// gather results
-nwr["shop"="doityourself"]({{bbox}});
-// print results
-out geom;
-
-
-## Possbible Tag-Values to make entries findable
+## Possbible Tag-Values to make entries findable in OpenStreetMap
 Auf [taginfo](https://taginfo.openstreetmap.org/) kann prüfen, wie beliebt ein Schlüssel, eine Schlüssel-Wert-Kombination ist, damit nicht unnötige neue Tags und Werte einführt, um Sachen auf OpenStreetMap zu verschlagworten, eine einheitliche Begrifflichkeit erleichtert auch die Auffindbarkeit
 * [leisure=hackerspace](https://taginfo.openstreetmap.org/tags/leisure=hackerspace)
   * Hackspace als Freizeit
@@ -49,3 +28,46 @@ Auf [taginfo](https://taginfo.openstreetmap.org/) kann prüfen, wie beliebt ein 
   * A place where people can go to work (typically requires a fee); not limited to a single employer.
 * [shop=doityourself](https://taginfo.openstreetmap.org/tags/shop=doityourself)
   * Ein Baumarkt ist ein großflächiger Supermarkt, der sich auf Materialien für Heimwerker spezialisiert hat.
+
+## Overpass API
+Usable via [Overpass Turbo](https://overpass-turbo.eu)
+```
+[out:json][timeout:25];
+{{geocodeArea:Görlitz}}->.searchArea;
+(
+  nwr["leisure"="hackerspace"](area.searchArea);
+  nwr["amenity"="workshop"](area.searchArea);
+  nwr["workshop"="repaircafe"](area.searchArea);
+  nwr["club"="doityourself"](area.searchArea);
+  nwr["social_facility"="workshop"](area.searchArea);
+  nwr["service:3dprinter"="yes"](area.searchArea);
+  nwr["service:lasercutter"="yes"](area.searchArea);
+  nwr["shop"="woodwork"](area.searchArea);
+  nwr["fablab"="yes"](area.searchArea);
+  nwr["workshop"="fablab"](area.searchArea);
+  nwr["amenity"="coworking_space"](area.searchArea);
+  nwr["shop"="doityourself"](area.searchArea);
+);
+out geom;
+```
+
+Additional one may add entries in Wikidata / Wikipedia as well and link it to the OpenStreetMap entries.
+
+```
+[out:json][timeout:25];
+(
+  nwr["leisure"="hackerspace"]({{bbox}});
+  nwr["amenity"="workshop"]({{bbox}});
+  nwr["workshop"="repaircafe"]({{bbox}});
+  nwr["club"="doityourself"]({{bbox}});
+  nwr["social_facility"="workshop"]({{bbox}});
+  nwr["service:3dprinter"="yes"]({{bbox}});
+  nwr["service:lasercutter"="yes"]({{bbox}});
+  nwr["shop"="woodwork"]({{bbox}});
+  nwr["fablab"="yes"]({{bbox}});
+  nwr["workshop"="fablab"]({{bbox}});
+  nwr["amenity"="coworking_space"]({{bbox}});
+  nwr["shop"="doityourself"]({{bbox}});
+);
+out geom;
+```
