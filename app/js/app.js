@@ -228,6 +228,15 @@ async function handleLocationSearch(event) {
     }
 
     showLocalFallback();
+
+    if (error.code === "no_acceptable_location") {
+      setLocationStatus(
+        "empty",
+        `${error.message} Showing local Görlitz demo fallback.`,
+      );
+      return;
+    }
+
     setLocationStatus(
       "error",
       `Live location search failed. Showing local Görlitz demo fallback. ${error.message}`,

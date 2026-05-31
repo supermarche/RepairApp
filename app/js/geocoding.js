@@ -1,5 +1,16 @@
 const config = window.REPAIR_APP_CONFIG;
 const kilometersPerDegreeLatitude = 111.32;
+const germanPostcodePattern = /^\d{5}$/;
+const settlementTypes = new Set([
+  "city",
+  "hamlet",
+  "isolated_dwelling",
+  "locality",
+  "municipality",
+  "settlement",
+  "town",
+  "village",
+]);
 
 export async function resolveGermanLocation(query, fetchImpl = fetch) {
   const normalizedQuery = String(query ?? "").trim();
@@ -8,12 +19,22 @@ export async function resolveGermanLocation(query, fetchImpl = fetch) {
     throw new Error("Enter a German city or postcode.");
   }
 
+  const isPostcode = germanPostcodePattern.test(normalizedQuery);
   const params = new URLSearchParams({
-    q: normalizedQuery,
     format: "jsonv2",
     countrycodes: "de",
+    layer: "address",
     limit: String(config.maxGeocodingResults),
   });
+
+  if (isPostcode) {
+    params.set("postalcode", normalizedQuery);
+  } else {
+    params.set("city", normalizedQuery);
+    params.set("featureType", "settlement");
+    params.set("namedetails", "1");
+  }
+
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), config.geocodingBrowserTimeoutMs);
   let response;
@@ -37,10 +58,17 @@ export async function resolveGermanLocation(query, fetchImpl = fetch) {
   }
 
   if (results.length === 0) {
-    throw new Error("No matching German city or postcode was found.");
+    throw noAcceptableLocationError();
   }
 
-  const result = results[0] || {};
+  const result = results.find((item) =>
+    isAcceptableResult(item, isPostcode, normalizedQuery),
+  );
+
+  if (!result) {
+    throw noAcceptableLocationError();
+  }
+
   const lat = parseCoordinate(result.lat);
   const lon = parseCoordinate(result.lon);
 
@@ -54,6 +82,50 @@ export async function resolveGermanLocation(query, fetchImpl = fetch) {
     lon,
     bbox: buildLocalBbox(lat, lon),
   };
+}
+
+function isAcceptableResult(result, isPostcode, query) {
+  if (!result || typeof result !== "object") {
+    return false;
+  }
+
+  const addressType = String(result.addresstype || "").toLowerCase();
+  const type = String(result.type || "").toLowerCase();
+
+  if (isPostcode) {
+    return addressType === "postcode" || type === "postcode";
+  }
+
+  const isSettlement = settlementTypes.has(addressType) ||
+    result.category === "place" && settlementTypes.has(type);
+
+  return isSettlement && getResultNames(result).some((name) =>
+    normalizeLocationName(name) === normalizeLocationName(query),
+  );
+}
+
+function getResultNames(result) {
+  const namedetails = result.namedetails || {};
+  const namedetailNames = Object.entries(namedetails)
+    .filter(([key]) => key === "name" || key.startsWith("name:"))
+    .map(([, value]) => value);
+  const displayName = String(result.display_name || "").split(",")[0];
+
+  return [...namedetailNames, displayName];
+}
+
+function normalizeLocationName(value) {
+  return String(value || "")
+    .normalize("NFKC")
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, " ");
+}
+
+function noAcceptableLocationError() {
+  const error = new Error("No acceptable German city or postcode was found.");
+  error.code = "no_acceptable_location";
+  return error;
 }
 
 function buildLocalBbox(lat, lon) {
