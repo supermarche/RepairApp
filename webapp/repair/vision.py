@@ -319,7 +319,6 @@ def extrahiere(medien, text: str = "", lang: str = "de") -> dict:
         response = client.chat.completions.create(
             model=model,
             response_format={"type": "json_object"},
-            temperature=0.2,
             timeout=timeout,
             messages=[
                 {"role": "system", "content": system_prompt},

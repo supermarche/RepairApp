@@ -120,7 +120,7 @@ def run_turn(state: dict, user_text: str, *, client=None, model=None,
         messages = system_prefix(lang) + state["messages"]
         resp = client.chat.completions.create(
             model=model, messages=messages, tools=tools.specs(),
-            temperature=0.4, timeout=config.llm_timeout())  # FIX S1: zentraler Getter, kein Duplikat
+            timeout=config.llm_timeout())  # FIX S1: zentraler Getter, kein Duplikat
         _merke_usage(resp, model, state)  # R4: Token-Usage best-effort festhalten
         msg = resp.choices[0].message
         tool_calls = list(getattr(msg, "tool_calls", []) or [])
