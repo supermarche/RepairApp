@@ -4,7 +4,7 @@
 > §2 Edge-Cases, §3 Architektur-Lücken, §5 priorisierte Roadmap), fachlich verankert in
 > `docs/konzept.adoc` (Decision-Log) und `docs/runtime-roles/`.
 
-**Next Available ID:** PROJ-39
+**Next Available ID:** PROJ-43
 
 **Status-Legende:** Planned · In Progress · In Review · Done
 
@@ -97,6 +97,23 @@
 > `POST /api/chat`. Die fachlichen Edge-Cases (D20–D25) und D17
 > sind bereits in PROJ-4/7/8/19/20/21/24 spezifiziert; Stufe 4 operationalisiert sie im
 > Orchestrierungs-Kontext (Rollen-Specs + Backstop), statt sie zu duplizieren.
+
+## Stufe 5 — Orchestrierungs-Härtung (Bugs & Verbesserungen)
+
+> Nachträge aus der Betriebs-Analyse vom 2026-05-31 (Auswertung `webapp/logs/repair.log`
+> und Protokoll `PGPv-p6krV4WLlzk`). Zwei echte Bugs (PROJ-39/40) und zwei Verbesserungen
+> (PROJ-41/42) am LLM-Orchestrierungs-Flow aus Stufe 4.
+
+| ID | Feature | Rolle | D-Anker | Status | Abhängigkeiten |
+|---|---|---|---|---|---|
+| PROJ-39 | 🐞 Medien-Extraktion repariert (`ai._clean_json_text` fehlt) | `aufnahme`/`diagnose` | D9 | Planned | PROJ-31, 34, 35 |
+| PROJ-40 | 🐞 Orchestrator-Robustheit bei API-Fehlern (`ai_error` statt Absturz) | `lotse` | D7/D19 | Planned | PROJ-35, 9, 28/29 |
+| PROJ-41 | ✨ Kontext-Verdichtung & Token-Budget | `lotse`/Querschnitt | D19/D7 | Planned | PROJ-35, 32, 9, 28 |
+| PROJ-42 | ✨ Ehrliche Degradations-Signalisierung bei Medien/Tools | Querschnitt | D3 | Planned | PROJ-39, 34, 25, 31 |
+
+> **Empfohlene Reihenfolge Stufe 5:** PROJ-39 (kritischer Bug) zuerst, dann PROJ-40
+> (Robustheit) und PROJ-42 (baut auf 39 auf) parallel, PROJ-41 (Verdichtung) als
+> eigenständige Optimierung danach.
 
 ## Empfohlene Build-Reihenfolge
 
