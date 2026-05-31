@@ -83,6 +83,7 @@ Priorität spiegelt die Stufen aus `docs/funktionsabgleich.md` §5 wider:
 | P1 | [PROJ-44 Service-Point-Übergabe-Report (PDF- & Text-Download)](../features/PROJ-44-service-point-report-download.md) | `protokoll`/`vermittlung` · D14/D3/D23 | Planned |
 | P1 | [PROJ-46 Feedback-Button (Prozess-Anmerkungen des Nutzers)](../features/PROJ-46-feedback-button.md) | Querschnitt · D3/D7 | Planned |
 | P1 | [PROJ-47 Spracheingabe im Chat (Diktat per OpenAI-Whisper)](../features/PROJ-47-spracheingabe-chat.md) | `aufnahme`/Querschnitt · D9 | Planned |
+| P2 | [PROJ-48 Prompt-Caching beobachtbar machen & steuern](../features/PROJ-48-prompt-caching.md) | Betrieb/`lotse` · D7/D19 | Planned |
 
 > **P3 = Stufe 4 (Architektur-Umbau):** LLM-Orchestrierung über `runtime-roles`
 > (OpenAI-only). Ersetzt den Single-Shot-Diagnosepfad durch einen orchestrierten Chat-Flow.
@@ -104,6 +105,12 @@ Priorität spiegelt die Stufen aus `docs/funktionsabgleich.md` §5 wider:
 > transkribiert über die OpenAI-API (Whisper). Bindet den vorhandenen, bislang ungenutzten
 > Endpunkt `POST /api/transkription` (PROJ-27) ans Frontend an; editierbares Transkript,
 > Wiederholen/Ergänzen, browserübergreifend (auch Firefox).
+>
+> **Stufe 10 (Prompt-Caching):** PROJ-48 — macht OpenAIs automatisches Prompt-Caching messbar
+> und steuerbar: erfasst `cached_tokens` (Trefferquote/Ersparnis in Protokoll, INFO-Log,
+> Entscheidungsprotokoll), setzt einen statischen `prompt_cache_key` je Sprache und härtet die
+> Byte-Stabilität von `system_prefix()` + `tools.specs()` per Guard-Test. .env-gesteuert,
+> kein neues KI-Verhalten.
 
 ## Erfolgsmetriken
 

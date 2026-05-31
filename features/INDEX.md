@@ -4,7 +4,7 @@
 > §2 Edge-Cases, §3 Architektur-Lücken, §5 priorisierte Roadmap), fachlich verankert in
 > `docs/konzept.adoc` (Decision-Log) und `docs/runtime-roles/`.
 
-**Next Available ID:** PROJ-48
+**Next Available ID:** PROJ-49
 
 **Status-Legende:** Planned · In Progress · In Review · Done
 
@@ -157,6 +157,18 @@
 | ID | Feature | Rolle | D-Anker | Status | Abhängigkeiten |
 |---|---|---|---|---|---|
 | PROJ-47 | Spracheingabe im Chat (Diktat per OpenAI-Whisper) | `aufnahme`/Querschnitt | D9 | Planned | PROJ-37, 27, 30 |
+
+## Stufe 10 — Prompt-Caching beobachtbar machen & steuern
+
+> Macht OpenAIs (automatisches) Prompt-Caching messbar und steuerbar: erfasst die
+> `cached_tokens` aus dem Usage-Objekt (Trefferquote/Ersparnis im Protokoll, INFO-Log und
+> Entscheidungsprotokoll), setzt einen statischen `prompt_cache_key` je Sprache zur Verbesserung
+> des Cache-Routings und härtet die Byte-Stabilität von `system_prefix()` + `tools.specs()` per
+> Guard-Test gegen unbeabsichtigten Cache-Drift. Kein neues KI-Verhalten, .env-gesteuert.
+
+| ID | Feature | Rolle | D-Anker | Status | Abhängigkeiten |
+|---|---|---|---|---|---|
+| PROJ-48 | Prompt-Caching beobachtbar machen & gezielt steuern | `lotse`/Betrieb | D7/D19 | Planned | PROJ-35, 28, 29, 30 |
 
 ## Empfohlene Build-Reihenfolge
 
