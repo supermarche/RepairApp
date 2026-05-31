@@ -133,6 +133,8 @@ export const localResources = [
 
 let osmResources = [];
 
+const config = window.REPAIR_APP_CONFIG;
+
 const osmTypeToUiType = {
   "electronics-repair": "commercial",
   "professional-repair": "commercial",
@@ -173,15 +175,24 @@ export function typeLabel(type) {
 }
 
 export async function loadOsmResources(fetchImpl = fetch) {
-  const response = await fetchImpl("https://overpass-api.de/api/interpreter", {
-    method: "POST",
-    headers: {
-      "Accept": "application/json",
-      "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8",
-      "User-Agent": "RepairApp-Hackathon-MVP/1.0",
-    },
-    body: new URLSearchParams({ data: buildOverpassQuery() }),
-  });
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), config.overpassBrowserTimeoutMs);
+  let response;
+
+  try {
+    response = await fetchImpl(config.overpassEndpoint, {
+      method: "POST",
+      headers: {
+        "Accept": "application/json",
+        "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8",
+        "User-Agent": "RepairApp-Hackathon-MVP/1.0",
+      },
+      body: new URLSearchParams({ data: buildOverpassQuery() }),
+      signal: controller.signal,
+    });
+  } finally {
+    clearTimeout(timeoutId);
+  }
 
   if (!response.ok) {
     throw new Error(`Overpass request failed with HTTP ${response.status}`);
@@ -236,11 +247,9 @@ function getMatchReason(resource, riskLevel) {
   return "Matches the selected category and can support this repair decision.";
 }
 
-function buildOverpassQuery() {
-  const bbox = "51.115,14.930,51.185,15.030";
-
+function buildOverpassQuery(bbox = config.gorlitzDemoBbox) {
   return `
-[out:json][timeout:25];
+[out:json][timeout:${config.overpassServerTimeoutSeconds}];
 (
   node["craft"="electronics_repair"](${bbox});
   way["craft"="electronics_repair"](${bbox});
@@ -259,7 +268,7 @@ function buildOverpassQuery() {
   node["amenity"="recycling"]["recycling_type"="centre"](${bbox});
   way["amenity"="recycling"]["recycling_type"="centre"](${bbox});
 );
-out center;
+out center ${config.maxLiveResults};
 `;
 }
 
