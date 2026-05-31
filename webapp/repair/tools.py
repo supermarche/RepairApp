@@ -72,7 +72,13 @@ def specs() -> list[dict]:
                            "Vision aus und liefert erkannte Gerätefelder (Kategorie, "
                            "Modell, Schäden, Kaufdatum, Händler). Ohne medienIds werden "
                            "alle am Vorgang gespeicherten Medien ausgewertet. Scheitert "
-                           "nie hart; ohne Bild/Backend kommt eine source-Kennung zurück.",
+                           "nie hart. Das Feld 'status' im Ergebnis unterscheidet ehrlich: "
+                           "'ok' = ausgewertet, Felder erkannt; 'nichts_erkannt' = "
+                           "ausgewertet, aber nichts Verwertbares (dem Nutzer 'nichts "
+                           "erkannt' + Foto-Tipp sagen); 'technischer_fehler' = die "
+                           "Auswertung konnte NICHT durchgeführt werden — dann dem Nutzer "
+                           "EHRLICH sagen, dass die Prüfung nicht lief, NIEMALS 'nichts "
+                           "erkannt'; 'keine_medien' = keine auswertbaren Medien beigefügt.",
             "parameters": {"type": "object", "properties": {
                 "medienIds": {"type": "array", "items": {"type": "string"}}}}}},
     ]

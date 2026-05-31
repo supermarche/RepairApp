@@ -1,6 +1,6 @@
 # PROJ-40: Orchestrator-Robustheit bei API-Fehlern im Turn
 
-## Status: Planned
+## Status: Done
 
 **Erstellt:** 2026-05-31
 **Zuletzt aktualisiert:** 2026-05-31

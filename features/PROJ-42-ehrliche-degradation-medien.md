@@ -1,6 +1,6 @@
 # PROJ-42: Ehrliche Degradations-Signalisierung bei Medien-/Tool-Fehlern
 
-## Status: Planned
+## Status: Done
 
 **Erstellt:** 2026-05-31
 **Zuletzt aktualisiert:** 2026-05-31

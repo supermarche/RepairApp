@@ -40,6 +40,8 @@ DEFAULT_LLM_TIMEOUT = 180.0  # s — CPU-Inferenz braucht länger als die Cloud
 DEFAULT_MAX_TOOL_ITERATIONS = 12  # Tool-Call-Runden pro Chat-Turn (Orchestrator)
 DEFAULT_MAX_MEDIEN_PRO_ANFRAGE = 6  # max. Medien je Diagnose-Anfrage (PROJ-31)
 DEFAULT_MAX_PDF_SEITEN = 5  # max. ausgewertete PDF-Seiten je Dokument (PROJ-31)
+DEFAULT_KONTEXT_TOKEN_BUDGET = 6000  # weiche Obergrenze gesendeter variabler Kontext (PROJ-41)
+DEFAULT_KONTEXT_WOERTLICH_TURNS = 4  # jüngste Turns wörtlich erhalten (PROJ-41)
 
 
 def _raw(name: str) -> str | None:
@@ -150,6 +152,28 @@ def max_tool_iterations() -> int:
     return _int("MAX_TOOL_ITERATIONS", DEFAULT_MAX_TOOL_ITERATIONS, lo=1, hi=2**31 - 1)
 
 
+def kontext_token_budget() -> int:
+    """Weiche Obergrenze (geschätzte Tokens) des gesendeten variablen Kontexts.
+
+    Steuert die Kontext-Verdichtung (PROJ-41): Überschreitet der wörtlich
+    erhaltene jüngste Verlauf dieses Budget, wird mehr älterer Verlauf in den
+    Zustands-Digest verschoben. Heuristische Token-Schätzung (kein Tokenizer).
+    Default 6000; gültig 500..1000000 (sonst Fail-fast).
+    """
+    return _int("KONTEXT_TOKEN_BUDGET", DEFAULT_KONTEXT_TOKEN_BUDGET,
+                lo=500, hi=1_000_000)
+
+
+def kontext_woertlich_turns() -> int:
+    """Anzahl jüngster Turns, die WÖRTLICH (unverdichtet) gesendet werden (PROJ-41).
+
+    Ältere Turns werden zu einem kompakten Zustands-Digest zusammengefasst.
+    Default 4; gültig 1..100 (sonst Fail-fast).
+    """
+    return _int("KONTEXT_WOERTLICH_TURNS", DEFAULT_KONTEXT_WOERTLICH_TURNS,
+                lo=1, hi=100)
+
+
 def flask_debug() -> bool:
     """Flask-Debug-Modus. Tolerant: ``0``/``false``/leer = aus, sonst an. Default an."""
     return os.environ.get("FLASK_DEBUG", "1") not in ("0", "false", "False", "")
@@ -165,7 +189,8 @@ def validate() -> None:
     """
     fehler: list[str] = []
     for getter in (port, llm_timeout, max_upload_bytes, max_tool_iterations,
-                   max_medien_pro_anfrage, max_pdf_seiten):
+                   max_medien_pro_anfrage, max_pdf_seiten,
+                   kontext_token_budget, kontext_woertlich_turns):
         try:
             getter()
         except ConfigError as exc:

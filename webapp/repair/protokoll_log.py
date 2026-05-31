@@ -277,6 +277,33 @@ def _token_markdown(response_json) -> tuple[str, int, str]:
     return md, 0, "fallback"
 
 
+def _orchestrierung_markdown(turn_rollen, turn_tools) -> str:
+    """PROJ-43: Ehrliche Rollen-/Tool-Ausweisung je Turn (Reihenfolge erhalten).
+
+    ``turn_rollen``/``turn_tools`` sind die in DIESEM Turn tatsächlich geladenen
+    Rollen bzw. ausgeführten Tools (aus ``orchestrator.run_turn``). Sind beide
+    leer/None, kam keine Beobachtbarkeitsspur an — dann nichts ausweisen (der
+    Aufrufer rendert den Abschnitt für solche Endpunkte gar nicht erst)."""
+    rollen = [str(r) for r in (turn_rollen or []) if r]
+    zeilen: list[str] = []
+    if rollen:
+        zeilen.append("- **Geladene Rollen:** " + " → ".join(f"`{r}`" for r in rollen))
+    else:
+        zeilen.append("- **Geladene Rollen:** _keine Rolle geladen (nur Lotse-Kontext)_")
+
+    tools = turn_tools or []
+    if tools:
+        teile = []
+        for t in tools:
+            name = t.get("tool") if isinstance(t, dict) else str(t)
+            ok = t.get("ok", True) if isinstance(t, dict) else True
+            teile.append(f"`{name}`" + ("" if ok else " ⚠ fehlgeschlagen"))
+        zeilen.append("- **Tool-Aufrufe:** " + ", ".join(teile))
+    else:
+        zeilen.append("- **Tool-Aufrufe:** _keine_")
+    return "\n".join(zeilen)
+
+
 def _entry_markdown(
     idx: int,
     *,
@@ -288,11 +315,21 @@ def _entry_markdown(
     request_payload: dict,
     response_json,
     status: int,
+    turn_rollen=None,
+    turn_tools=None,
+    orchestrierung: bool = False,
 ) -> str:
     token_md, _total, _kl = _token_markdown(response_json)
     resp_block = "```json\n" + _kuerzen(_json_block(response_json)) + "\n```"
-    return "\n".join([
-        f"## {idx} · {ts} · Rolle `{rolle}`",
+    # PROJ-43: Für den Orchestrator-Endpunkt (/api/chat) statt der vom Endpunkt
+    # abgeleiteten Pauschal-Rolle die tatsächlichen Turn-Rollen ausweisen.
+    if orchestrierung:
+        rollen = [str(r) for r in (turn_rollen or []) if r]
+        kopf_rolle = (" → ".join(rollen) if rollen else "nur Lotse-Kontext")
+    else:
+        kopf_rolle = rolle
+    zeilen = [
+        f"## {idx} · {ts} · Rolle `{kopf_rolle}`",
         "",
         "**Gesendet**",
         "",
@@ -312,6 +349,15 @@ def _entry_markdown(
         "",
         resp_block,
         "",
+    ]
+    if orchestrierung:
+        zeilen += [
+            "**Orchestrierung (Rollen & Tools)**",
+            "",
+            _orchestrierung_markdown(turn_rollen, turn_tools),
+            "",
+        ]
+    zeilen += [
         "**KI-Entscheidung**",
         "",
         _entscheidung_markdown(response_json, request_payload),
@@ -322,7 +368,8 @@ def _entry_markdown(
         "",
         "---",
         "",
-    ])
+    ]
+    return "\n".join(zeilen)
 
 
 def _header(vid: str | None, anzahl: int, total: int, ai_cnt: int, fb_cnt: int, ts: str) -> str:
@@ -360,16 +407,26 @@ def protokolliere(
     response_json,
     status: int,
     vid,
+    turn_rollen=None,
+    turn_tools=None,
 ) -> None:
     """Schreibt einen Protokoll-Abschnitt (best-effort, nicht-blockierend).
 
     Jeder Fehler wird verschluckt (nur stderr-Hinweis) — die HTTP-Antwort des
     Endpunkts bleibt davon unberührt (PROJ-28 Akzeptanzkriterium).
+
+    ``turn_rollen``/``turn_tools`` (PROJ-43): die im Orchestrator-Turn tatsächlich
+    geladenen Rollen bzw. ausgeführten Tools (nur für /api/chat). Sind sie gesetzt,
+    weist der Eintrag sie ehrlich aus — statt der vom Endpunkt abgeleiteten
+    Pauschal-Rolle „lotse". Für andere Endpunkte bleibt ``rolle_fuer`` der Fallback.
     """
     try:
         if not _enabled():
             return
         rolle = rolle_fuer(endpoint)
+        # Orchestrierungs-Endpunkt (/api/chat): tatsächliche Turn-Rollen/Tools
+        # ausweisen statt der irreführenden Endpunkt→Rolle-Pauschale (PROJ-43).
+        orchestrierung = endpoint == "api_chat"
         safe = _safe_vid(vid)
         dateiname = f"{safe}.md" if safe else _SAMMELDATEI
         ts = _now_iso()
@@ -398,6 +455,9 @@ def protokolliere(
                 request_payload=request_payload,
                 response_json=response_json,
                 status=status,
+                turn_rollen=turn_rollen,
+                turn_tools=turn_tools,
+                orchestrierung=orchestrierung,
             )
             neue_entries = (entries_text + neuer_eintrag) if entries_text else neuer_eintrag
 

@@ -82,29 +82,40 @@ class _FakeResponse:
 
 
 class _FakeCompletions:
-    def __init__(self, sink):
+    def __init__(self, sink, content=None, raises=None):
         self._sink = sink
+        # content: feste Roh-Antwort (z. B. mit Fences); raises: Exception-Instanz.
+        self._content = content
+        self._raises = raises
 
     def create(self, **kwargs):
         self._sink.append(kwargs)  # gesendete messages mitschneiden
+        if self._raises is not None:
+            raise self._raises
+        if self._content is not None:
+            return _FakeResponse(self._content)
         return _FakeResponse(json.dumps(_VALID_DEVICE, ensure_ascii=False))
 
 
 class _FakeChat:
-    def __init__(self, sink):
-        self.completions = _FakeCompletions(sink)
+    def __init__(self, sink, content=None, raises=None):
+        self.completions = _FakeCompletions(sink, content=content, raises=raises)
 
 
 class _FakeClient:
-    def __init__(self, sink):
-        self.chat = _FakeChat(sink)
+    def __init__(self, sink, content=None, raises=None):
+        self.chat = _FakeChat(sink, content=content, raises=raises)
 
 
-def _patch_backend(monkeypatchish_sink):
+def _patch_backend(monkeypatchish_sink, content=None, raises=None):
     """Ersetzt die Backend-Auflösung durch ein Fake-Backend; gibt eine
-    Restore-Funktion zurück. (Kein pytest nötig.)"""
+    Restore-Funktion zurück. (Kein pytest nötig.)
+
+    ``content`` erlaubt eine feste Roh-Antwort (z. B. mit Code-Fences),
+    ``raises`` eine vom ``create``-Call geworfene Exception (technischer Fehler).
+    """
     orig_resolve = ai._resolve_backend
-    client = _FakeClient(monkeypatchish_sink)
+    client = _FakeClient(monkeypatchish_sink, content=content, raises=raises)
 
     def fake_resolve():
         # OpenAI-only: _resolve_backend liefert (client, model) — 2-Tupel.
@@ -249,6 +260,127 @@ def test_endpoint_medien_pdf_dokument() -> None:
     )
     j = r.get_json()
     assert j["id"] and j["art"] == "dokument" and j["mime"] == "application/pdf"
+
+
+# ── PROJ-39: JSON-Bereinigung (_clean_json_text) ──────────────────────────────
+def test_clean_json_text_existiert_und_erreichbar() -> None:
+    # Regressions-Smoke: das Symbol darf nicht erneut verschwinden.
+    assert hasattr(ai, "_clean_json_text")
+    assert callable(ai._clean_json_text)
+
+
+def test_clean_json_text_entfernt_fences_und_text() -> None:
+    rein = '{"a": 1}'
+    assert json.loads(ai._clean_json_text(rein)) == {"a": 1}
+
+    json_fence = '```json\n{"a": 1, "b": "x"}\n```'
+    assert json.loads(ai._clean_json_text(json_fence)) == {"a": 1, "b": "x"}
+
+    blank_fence = '```\n{"a": 2}\n```'
+    assert json.loads(ai._clean_json_text(blank_fence)) == {"a": 2}
+
+    mit_text = 'Hier ist das Ergebnis:\n```json\n{"a": 3}\n```\nViel Erfolg!'
+    assert json.loads(ai._clean_json_text(mit_text)) == {"a": 3}
+
+    array = '```json\n[1, 2, 3]\n```'
+    assert json.loads(ai._clean_json_text(array)) == [1, 2, 3]
+
+
+def test_clean_json_text_leer_und_none() -> None:
+    assert ai._clean_json_text("") == ""
+    assert ai._clean_json_text(None) == ""
+    # Kein JSON-Inhalt → kein Crash; json.loads scheitert sauber (Degradation).
+    cleaned = ai._clean_json_text("kein json hier")
+    raised = False
+    try:
+        json.loads(cleaned)
+    except ValueError:
+        raised = True
+    assert raised
+
+
+def test_extrahiere_mit_fences_liefert_echte_felder() -> None:
+    """Gemockte KI-Antwort mit ```json-Fences → geparste Felder, kein AttributeError."""
+    res = multimodal.save_medium(b"\x89PNG\r\n\x1a\n_fake", art="foto", mime="image/png")
+    antwort = (
+        '```json\n'
+        '{"kategorie": {"wert": "Toaster", "konfidenz": "hoch", "erkannt": true},\n'
+        ' "schaeden": [{"wert": "Kabel angeschmort", "konfidenz": "mittel"}]}\n'
+        '```'
+    )
+    sink: list = []
+    restore = _patch_backend(sink, content=antwort)
+    try:
+        r = vision.extrahiere([res])
+    finally:
+        restore()
+    assert r["source"] == "vision"
+    assert r["status"] == "ok"
+    assert r["nichtsErkannt"] is False
+    assert r["felder"]["kategorie"]["wert"] == "Toaster"
+    assert any(s["wert"] == "Kabel angeschmort" for s in r["felder"]["schaeden"])
+
+
+# ── PROJ-42: ehrliche Degradation (technischer_fehler vs nichts_erkannt) ───────
+def test_extrahiere_technischer_fehler_bei_exception() -> None:
+    """Erzwungener technischer Fehler (z. B. Timeout) → status technischer_fehler."""
+    res = multimodal.save_medium(b"\x89PNG\r\n\x1a\n_fake", art="foto", mime="image/png")
+    sink: list = []
+    restore = _patch_backend(sink, raises=TimeoutError("API-Timeout"))
+    try:
+        r = vision.extrahiere([res])
+    finally:
+        restore()
+    assert r["source"] == "vision_error"
+    assert r["status"] == "technischer_fehler"
+    # Hinweis suggeriert KEINE erfolgte Prüfung ("nichts erkannt").
+    assert "nichts erkannt" not in r["hinweis"].lower()
+
+
+def test_extrahiere_nichts_erkannt_bei_leerer_erkennung() -> None:
+    """Auswertung lief, aber nichts Verwertbares → status nichts_erkannt + Tipp möglich."""
+    res = multimodal.save_medium(b"\x89PNG\r\n\x1a\n_fake", art="foto", mime="image/png")
+    leer = json.dumps({
+        "kategorie": {"wert": "", "konfidenz": "niedrig", "erkannt": False},
+        "schaeden": [], "hinweise": [],
+    }, ensure_ascii=False)
+    sink: list = []
+    restore = _patch_backend(sink, content=leer)
+    try:
+        r = vision.extrahiere([res])
+    finally:
+        restore()
+    assert r["source"] == "vision"
+    assert r["status"] == "nichts_erkannt"
+    assert r["nichtsErkannt"] is True
+
+
+def test_extrahiere_no_backend_ist_technischer_fehler() -> None:
+    """Kein Vision-Backend ist ein technischer Fehler, kein Nullresultat."""
+    res = multimodal.save_medium(b"\x89PNG\r\n\x1a\n_fake", art="foto", mime="image/png")
+    # ohne Patch: kein OPENAI_API_KEY → _resolve_backend liefert (None, None)
+    r = vision.extrahiere([res])
+    assert r["source"] == "no_vision_backend"
+    assert r["status"] == "technischer_fehler"
+
+
+def test_status_keine_medien() -> None:
+    r = vision.extrahiere([])
+    assert r["status"] == "keine_medien"
+
+
+def test_tool_extrahiere_aus_medien_reicht_status_durch() -> None:
+    """tools.extrahiere_aus_medien gibt den Status (technischer_fehler) im JSON weiter."""
+    from repair import tools
+    res = multimodal.save_medium(b"\x89PNG\r\n\x1a\n_fake", art="foto", mime="image/png")
+    sink: list = []
+    restore = _patch_backend(sink, raises=RuntimeError("crash"))
+    try:
+        out = tools.dispatch("extrahiere_aus_medien", {"medienIds": [res["id"]]}, "vid-x")
+    finally:
+        restore()
+    payload = json.loads(out["content"])
+    assert payload["status"] == "technischer_fehler"
 
 
 # ── Standalone-Runner ──────────────────────────────────────────────────────────

@@ -194,6 +194,10 @@ def _prot_after(response):
                 response_json=response_json,
                 status=response.status_code,
                 vid=ctx["vid"],
+                # PROJ-43: vom Chat-Handler hinterlegte Turn-Beobachtbarkeit
+                # (tatsächlich geladene Rollen / ausgeführte Tools dieses Turns).
+                turn_rollen=ctx.get("turn_rollen"),
+                turn_tools=ctx.get("turn_tools"),
             )
         except Exception:
             pass
@@ -364,6 +368,13 @@ def api_chat():
         state["medien"] = zusammen
     result = orchestrator.run_turn(state, text)
     store.save_vorgang(vid, state)
+    # PROJ-43: turn-lokale Beobachtbarkeit (geladene Rollen / ausgeführte Tools)
+    # an den Protokoll-Kontext durchreichen. Diese Zusatz-Keys fließen NICHT in
+    # die Client-Antwort (die wird unten explizit nur aus antwort_text/karten/
+    # abgebrochen gebaut).
+    if getattr(g, "_prot", None):
+        g._prot["turn_rollen"] = result.get("_turn_rollen")
+        g._prot["turn_tools"] = result.get("_turn_tools")
     if result.get("error"):
         code = result.get("code", "ai_error")
         status = {"no_backend": 503}.get(code, 502)

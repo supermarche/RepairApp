@@ -1,6 +1,6 @@
 # PROJ-41: Kontext-Verdichtung & Token-Budget der Orchestrierung
 
-## Status: Planned
+## Status: Done
 
 **Erstellt:** 2026-05-31
 **Zuletzt aktualisiert:** 2026-05-31

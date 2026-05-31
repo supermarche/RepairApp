@@ -272,10 +272,26 @@ def extrahiere(medien, text: str = "", lang: str = "de") -> dict:
         {
           "felder": {kategorie, modell, schaeden[], kaufdatum, haendler, hinweise[]},
           "source": "vision" | "no_vision_backend" | "vision_error" | "keine_medien",
+          "status": "ok" | "nichts_erkannt" | "technischer_fehler" | "keine_medien",
           "hinweis": "...",          # nicht-blockierender Hinweis (Degradation/PDF)
           "bildAnzahl": int,          # Anzahl an das Modell gegebener Bilder
           "nichtsErkannt": bool,      # für den „nichts erkannt"-Zustand im UI
         }
+
+    ``status`` (PROJ-42) unterscheidet ehrlich zwischen den Fällen, die
+    ``nichtsErkannt`` historisch vermengt hat:
+
+    * ``"ok"`` — die Auswertung lief und es wurden Felder erkannt.
+    * ``"nichts_erkannt"`` — die Auswertung lief erfolgreich, fand aber nichts
+      Verwertbares (Bild lesbar, aber leer/unscharf → Foto-Tipp zulässig).
+    * ``"technischer_fehler"`` — die Auswertung konnte technisch NICHT
+      durchgeführt werden (kein Vision-Backend, API-/Timeout-Fehler, nicht
+      konvertierbares Dokument). Hier darf dem Nutzer NICHT „nichts erkannt"
+      vorgetäuscht werden — die Prüfung hat gar nicht stattgefunden.
+    * ``"keine_medien"`` — es waren keine auswertbaren Bilder beigefügt (kein
+      technischer Fehler im Sinne von „App kaputt").
+
+    ``nichtsErkannt``/``source`` bleiben aus Rückwärtskompatibilität erhalten.
     """
     bilder, medien_hinweise = bilder_aus_medien(medien)
     hinweis = " ".join(medien_hinweise).strip()
@@ -285,6 +301,7 @@ def extrahiere(medien, text: str = "", lang: str = "de") -> dict:
         return {
             "felder": leere_felder(),
             "source": "keine_medien",
+            "status": "keine_medien",
             "hinweis": hinweis or "Keine auswertbaren Bilder/Dokumente beigefügt.",
             "bildAnzahl": 0,
             "nichtsErkannt": True,
@@ -292,10 +309,12 @@ def extrahiere(medien, text: str = "", lang: str = "de") -> dict:
 
     client, model = _resolve_vision_backend()
     if client is None:
-        log.info("Vision-Extraktion: kein Vision-Backend → Degradation auf Text-Diagnose.")
+        log.warning("Vision-Extraktion: kein Vision-Backend konfiguriert → "
+                    "technischer Fehler (keine Auswertung durchgeführt).")
         return {
             "felder": leere_felder(),
             "source": "no_vision_backend",
+            "status": "technischer_fehler",
             "hinweis": ("Kein Vision-Backend konfiguriert — die Bilder konnten nicht "
                         "ausgewertet werden. Du kannst die Angaben unten manuell ergänzen "
                         "oder direkt mit der Text-Diagnose fortfahren."),
@@ -340,18 +359,22 @@ def extrahiere(medien, text: str = "", lang: str = "de") -> dict:
         return {
             "felder": felder,
             "source": "vision",
+            "status": "nichts_erkannt" if nichts else "ok",
             "hinweis": hinweis,
             "bildAnzahl": len(bilder),
             "nichtsErkannt": nichts,
         }
     except Exception as exc:
-        log.warning("Vision-Extraktion fehlgeschlagen (%s: %s) → Degradation.",
+        log.warning("Vision-Extraktion technisch fehlgeschlagen (%s: %s) → "
+                    "technischer Fehler, keine Auswertung durchgeführt.",
                     type(exc).__name__, exc)
         return {
             "felder": leere_felder(),
             "source": "vision_error",
-            "hinweis": ("Die Bildauswertung ist fehlgeschlagen. Du kannst die Angaben "
-                        "unten manuell ergänzen oder mit der Text-Diagnose fortfahren."),
+            "status": "technischer_fehler",
+            "hinweis": ("Die Bildauswertung konnte technisch nicht durchgeführt werden. "
+                        "Du kannst die Angaben unten manuell ergänzen oder mit der "
+                        "Text-Diagnose fortfahren."),
             "bildAnzahl": len(bilder),
             "nichtsErkannt": True,
         }

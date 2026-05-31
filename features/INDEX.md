@@ -106,11 +106,11 @@
 
 | ID | Feature | Rolle | D-Anker | Status | Abhängigkeiten |
 |---|---|---|---|---|---|
-| PROJ-39 | 🐞 Medien-Extraktion repariert (`ai._clean_json_text` fehlt) | `aufnahme`/`diagnose` | D9 | Planned | PROJ-31, 34, 35 |
-| PROJ-40 | 🐞 Orchestrator-Robustheit bei API-Fehlern (`ai_error` statt Absturz) | `lotse` | D7/D19 | Planned | PROJ-35, 9, 28/29 |
-| PROJ-41 | ✨ Kontext-Verdichtung & Token-Budget | `lotse`/Querschnitt | D19/D7 | Planned | PROJ-35, 32, 9, 28 |
-| PROJ-42 | ✨ Ehrliche Degradations-Signalisierung bei Medien/Tools | Querschnitt | D3 | Planned | PROJ-39, 34, 25, 31 |
-| PROJ-43 | ✨ Beobachtbarkeit der Orchestrierung (Rollenwechsel & Tool-Calls im Log/Protokoll) | Betrieb/Querschnitt | — | Planned | PROJ-35, 32, 28, 29, 34 |
+| PROJ-39 | 🐞 Medien-Extraktion repariert (`ai._clean_json_text` fehlt) | `aufnahme`/`diagnose` | D9 | Done | PROJ-31, 34, 35 |
+| PROJ-40 | 🐞 Orchestrator-Robustheit bei API-Fehlern (`ai_error` statt Absturz) | `lotse` | D7/D19 | Done | PROJ-35, 9, 28/29 |
+| PROJ-41 | ✨ Kontext-Verdichtung & Token-Budget | `lotse`/Querschnitt | D19/D7 | Done | PROJ-35, 32, 9, 28 |
+| PROJ-42 | ✨ Ehrliche Degradations-Signalisierung bei Medien/Tools | Querschnitt | D3 | Done | PROJ-39, 34, 25, 31 |
+| PROJ-43 | ✨ Beobachtbarkeit der Orchestrierung (Rollenwechsel & Tool-Calls im Log/Protokoll) | Betrieb/Querschnitt | — | Done | PROJ-35, 32, 28, 29, 34 |
 
 > **Empfohlene Reihenfolge Stufe 5:** PROJ-39 (kritischer Bug) zuerst, dann PROJ-40
 > (Robustheit) und PROJ-42 (baut auf 39 auf) parallel, PROJ-41 (Verdichtung) als

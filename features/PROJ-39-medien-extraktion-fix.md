@@ -1,6 +1,6 @@
 # PROJ-39: Medien-Extraktion repariert (Vision-Tool im Chat-Flow)
 
-## Status: Planned
+## Status: Done
 
 **Erstellt:** 2026-05-31
 **Zuletzt aktualisiert:** 2026-05-31

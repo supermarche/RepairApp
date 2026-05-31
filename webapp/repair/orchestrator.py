@@ -11,9 +11,12 @@ cachebar (kein Drift bei jeder Spec-Änderung).
 from __future__ import annotations
 
 import json
+import logging
 
-from . import roles, tools, config, protokoll_log
+from . import roles, tools, config, protokoll_log, kontext
 from .ai import _resolve_backend  # Backend-Auflösung wiederverwenden
+
+log = logging.getLogger(__name__)
 
 # Kompakte, STABILE Ableitung aus runtime-roles/lotse.md (nicht der Volltext —
 # sonst Cache-Drift bei jeder Spec-Änderung). Volltext via lade_rolle("lotse").
@@ -64,7 +67,12 @@ _WERKZEUG_HINWEIS = """\
 Karten-Typen für zeige_karte: frage, aufnahme, diagnose, ampel, vergleich, schritte, \
 hinweis, anbieter, ersatzteil, erfolg. Rückfragen IMMER als einzelne frage-Karte (nie \
 als Liste im Text). Bei Mehrfachdefekten: pro Defekt eine ampel-Karte plus ein \
-Gesamt-Fazit nach dem schwächsten Glied."""
+Gesamt-Fazit nach dem schwächsten Glied.
+Medien-Auswertung (extrahiere_aus_medien): Richte dich nach dem Feld 'status'. Bei \
+'technischer_fehler' sage dem Nutzer EHRLICH, dass die Bildauswertung nicht durchgeführt \
+werden konnte — täusche NIE eine erfolgte Prüfung vor und sage NICHT 'nichts erkannt'; \
+stelle das auch nicht als geprüfte Erkenntnis mit Konfidenz dar. Nur bei 'nichts_erkannt' \
+ist 'nichts erkannt' + Foto-Tipp (besseres Licht, näher heran, Typenschild) zulässig."""
 
 # Sprachdirektive (D17) — ans Ende des Präfix gehängt. Default: de.
 _SPRACHDIREKTIVE = {
@@ -94,13 +102,18 @@ def run_turn(state: dict, user_text: str, *, client=None, model=None,
              max_iterations: int | None = None) -> dict:
     """Führt einen Chat-Turn aus. Mutiert state['messages'/'karten'/...].
 
-    Liefert {"antwort_text", "karten", "abgebrochen"}.
+    Liefert {"antwort_text", "karten", "abgebrochen"} plus die turn-lokalen
+    Beobachtbarkeits-Keys ``_turn_rollen`` / ``_turn_tools`` (PROJ-43). Letztere
+    sind rein additiv; app.py baut die Client-Antwort explizit ohne sie, sie
+    landen also NICHT in der HTTP-Antwort.
+
     client/model optional injizierbar (Tests); sonst via _resolve_backend().
     """
     if client is None:
         client, model = _resolve_backend()  # FIX B2: _resolve_backend liefert 2-Tupel
         if client is None:
             return {"antwort_text": "", "karten": [], "abgebrochen": False,
+                    "_turn_rollen": [], "_turn_tools": [],
                     "error": "Kein KI-Backend konfiguriert.", "code": "no_backend"}
     if max_iterations is None:
         max_iterations = config.max_tool_iterations()
@@ -115,12 +128,36 @@ def run_turn(state: dict, user_text: str, *, client=None, model=None,
     _medien_hinweis_anhaengen(state)  # PROJ-31: auf neu beigefügte Medien hinweisen
     neue_karten: list[dict] = []
     vorgang_id = state.get("vorgang_id", "")
+    # PROJ-43: turn-lokale Beobachtbarkeit. state["geladene_rollen"]/
+    # ["entscheidungsprotokoll"] akkumulieren über ALLE Turns — diese Listen
+    # halten nur DIESEN Turn fest (Reihenfolge erhalten).
+    turn_rollen: list[str] = []
+    turn_tools: list[dict] = []
 
     for _ in range(max_iterations):
-        messages = system_prefix(lang) + state["messages"]
-        resp = client.chat.completions.create(
-            model=model, messages=messages, tools=tools.specs(),
-            timeout=config.llm_timeout())  # FIX S1: zentraler Getter, kein Duplikat
+        # PROJ-41: nicht den ganzen Verlauf senden — verdichtete Sende-Sicht aus
+        # state["messages"] bauen (Rollen-Volltexte entladen, älteren Verlauf zu
+        # einem Digest verdichten). state["messages"] bleibt der vollständige
+        # Audit-Verlauf; system_prefix() bleibt byte-stabil/cachebar.
+        messages = kontext.sende_sicht(system_prefix(lang), state)
+        try:
+            resp = client.chat.completions.create(
+                model=model, messages=messages, tools=tools.specs(),
+                timeout=config.llm_timeout())  # FIX S1: zentraler Getter, kein Duplikat
+        except Exception as exc:  # noqa: BLE001 — jeder API-/Netzwerkfehler → ai_error
+            # PROJ-40: Der create()-Call steht am Schleifenanfang; assistant-/tool-
+            # Nachrichten werden erst NACH erfolgreichem create angehängt. Es bleibt
+            # also KEIN halber Verlauf (z. B. assistant mit tool_calls ohne tool-
+            # Antworten) zurück — der nächste Turn setzt konsistent fort. Bereits
+            # gesammelte Karten bleiben erhalten (neue_karten + state["karten"]).
+            log.warning("KI-Call im Turn fehlgeschlagen (vorgang=%s): %s: %s",
+                        vorgang_id or "—", type(exc).__name__, exc)
+            return {"antwort_text":
+                    "Die KI-Verbindung hat gerade Probleme. Bitte versuche es gleich "
+                    "noch einmal.",
+                    "karten": neue_karten, "abgebrochen": False,
+                    "_turn_rollen": turn_rollen, "_turn_tools": turn_tools,
+                    "error": f"{type(exc).__name__}: {exc}", "code": "ai_error"}
         _merke_usage(resp, model, state)  # R4: Token-Usage best-effort festhalten
         msg = resp.choices[0].message
         tool_calls = list(getattr(msg, "tool_calls", []) or [])
@@ -131,7 +168,8 @@ def run_turn(state: dict, user_text: str, *, client=None, model=None,
         if not tool_calls:
             _sicherheits_backstop(neue_karten, state)  # nicht-sperrend, D15-konform
             return {"antwort_text": msg.content or "", "karten": neue_karten,
-                    "abgebrochen": False}
+                    "abgebrochen": False,
+                    "_turn_rollen": turn_rollen, "_turn_tools": turn_tools}
 
         for tc in tool_calls:
             try:
@@ -139,17 +177,32 @@ def run_turn(state: dict, user_text: str, *, client=None, model=None,
             except json.JSONDecodeError:
                 args = {}
             res = tools.dispatch(tc.function.name, args, vorgang_id=vorgang_id)
+            fehlgeschlagen = "error" in res
             if "karte" in res:
                 neue_karten.append(res["karte"])
                 state["karten"].append(res["karte"])
                 tool_content = json.dumps({"ok": True, "typ": res["karte"]["typ"]},
                                           ensure_ascii=False)
-            elif "error" in res:
+            elif fehlgeschlagen:
                 tool_content = json.dumps({"error": res["error"]}, ensure_ascii=False)
             else:
                 tool_content = res.get("content", "")
-            if tc.function.name == "lade_rolle" and "error" not in res:
-                state["geladene_rollen"].append(args.get("name"))
+            if tc.function.name == "lade_rolle" and not fehlgeschlagen:
+                rolle = args.get("name")
+                state["geladene_rollen"].append(rolle)
+                turn_rollen.append(rolle)
+                # PROJ-43: Rollenwechsel auf INFO sichtbar machen (Name + Vorgang,
+                # keine Rollen-Volltexte/PII).
+                log.info("Rolle geladen: %s (vorgang=%s)", rolle, vorgang_id or "—")
+            # PROJ-43: Tool-Aufruf turn-lokal erfassen + kompakt loggen. Tool-NAME
+            # ja, Klartext-Argumente NICHT (PII-Leitlinie PROJ-29).
+            turn_tools.append({"tool": tc.function.name, "ok": not fehlgeschlagen})
+            if fehlgeschlagen:
+                log.debug("Tool fehlgeschlagen: %s (vorgang=%s): %s",
+                          tc.function.name, vorgang_id or "—", res.get("error"))
+            else:
+                log.debug("Tool ausgeführt: %s (vorgang=%s)",
+                          tc.function.name, vorgang_id or "—")
             state["entscheidungsprotokoll"].append(
                 {"tool": tc.function.name, "args": args})
             state["messages"].append({
@@ -160,7 +213,8 @@ def run_turn(state: dict, user_text: str, *, client=None, model=None,
     return {"antwort_text":
             "Ich habe viele Schritte versucht und mache hier einen Zwischenstopp. "
             "Magst du mir noch eine Info geben?",
-            "karten": neue_karten, "abgebrochen": True}
+            "karten": neue_karten, "abgebrochen": True,
+            "_turn_rollen": turn_rollen, "_turn_tools": turn_tools}
 
 
 def _merke_usage(resp, model, state) -> None:
