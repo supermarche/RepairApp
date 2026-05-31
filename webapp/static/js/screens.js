@@ -1892,8 +1892,11 @@
       }
       // Assistenz-Bubble
       var inner = [];
-      if (m.text) inner.push(h('div', { class: 'rk-bubble-text' }, m.text));
       var karten = m.karten || [];
+      // Enthält der Turn eine frage-Karte, IST die Karte die Frage — den Prosa-Text
+      // dann nicht zusätzlich rendern (sonst Dopplung: Frage als Text UND als Karte).
+      var hatFrage = karten.some(function (k) { return k && k.typ === 'frage'; });
+      if (m.text && !hatFrage) inner.push(h('div', { class: 'rk-bubble-text' }, m.text));
       if (karten.length) {
         var kartenWrap = h('div', { class: 'rk-chat-cards' });
         karten.forEach(function (k, ki) {

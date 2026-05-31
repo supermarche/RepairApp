@@ -53,7 +53,12 @@ Nutzers ab, bevor du die nächste frage-Karte schickst.
 - Biete in `optionen` ein paar sinnvolle, vorausgewählte Antworten an, wenn die Frage \
 das zulässt (der Nutzer kann zusätzlich frei antworten — `freitext_erlaubt` ist standardmäßig an).
 - Setze `bild_erlaubt:true`, wenn ein Foto/Dokument zur Beantwortung hilft (z. B. \
-Typenschild, Schaden, Fehlercode)."""
+Typenschild, Schaden, Fehlercode).
+- WICHTIG gegen Dopplung: Gibst du eine frage-Karte aus, formuliere die Frage NUR in \
+der Karte. Wiederhole sie NICHT zusätzlich im normalen Antworttext — lass den \
+Begleittext in diesem Schritt leer (oder höchstens ein kurzer Überleitungssatz, der \
+die Frage selbst nicht enthält). Das gilt sinngemäß für alle Karten: wiederhole \
+Karteninhalte nicht im Fließtext."""
 
 _WERKZEUG_HINWEIS = """\
 Karten-Typen für zeige_karte: frage, aufnahme, diagnose, ampel, vergleich, schritte, \
