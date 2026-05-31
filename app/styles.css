@@ -110,6 +110,7 @@ label {
 
 select,
 textarea,
+input,
 button {
   width: 100%;
   border-radius: 8px;
@@ -117,7 +118,8 @@ button {
 }
 
 select,
-textarea {
+textarea,
+input {
   border: 1px solid var(--line);
   padding: 12px 13px;
   color: var(--text);
@@ -131,6 +133,7 @@ textarea {
 
 select:focus,
 textarea:focus,
+input:focus,
 button:focus-visible {
   outline: 3px solid rgba(18, 109, 106, 0.24);
   outline-offset: 2px;
@@ -316,6 +319,21 @@ button:disabled {
   align-items: center;
 }
 
+.location-form {
+  display: grid;
+  gap: 8px;
+}
+
+.location-search-controls {
+  display: grid;
+  grid-template-columns: minmax(180px, 1fr) minmax(180px, 240px);
+  gap: 10px;
+}
+
+.osm-status[data-state="error"] {
+  color: var(--high);
+}
+
 .live-row {
   display: grid;
   grid-template-columns: minmax(180px, 240px) 1fr;
@@ -373,6 +391,7 @@ button:disabled {
   .resources-grid,
   .section-heading,
   .filters,
+  .location-search-controls,
   .live-row,
   .example-row {
     grid-template-columns: 1fr;

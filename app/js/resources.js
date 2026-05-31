@@ -132,6 +132,7 @@ export const localResources = [
 ];
 
 let osmResources = [];
+let osmResourceGeneration = 0;
 
 const config = window.REPAIR_APP_CONFIG;
 
@@ -150,11 +151,17 @@ const priorityByRisk = {
   low: ["community", "tools", "guidance", "workshop", "commercial", "disposal"],
 };
 
-export function matchResources({ category, riskLevel, typeFilter = "all", categoryFilter = "all" }) {
+export function matchResources({
+  category,
+  riskLevel,
+  typeFilter = "all",
+  categoryFilter = "all",
+  sourceFilter = "all",
+}) {
   const selectedCategory = categoryFilter === "all" ? category : categoryFilter;
   const priorities = priorityByRisk[riskLevel] || priorityByRisk.low;
 
-  return getAllResources()
+  return getResources(sourceFilter)
     .filter((resource) => typeFilter === "all" || resource.type === typeFilter)
     .filter((resource) =>
       selectedCategory === "all" ||
@@ -180,6 +187,7 @@ export async function loadOsmResources(options = {}) {
     : options;
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), config.overpassBrowserTimeoutMs);
+  const generation = osmResourceGeneration;
   let response;
 
   try {
@@ -206,6 +214,10 @@ export async function loadOsmResources(options = {}) {
     .map(normalizeOsmElement)
     .filter(Boolean);
 
+  if (generation !== osmResourceGeneration) {
+    return [];
+  }
+
   osmResources = dedupeResources([...osmResources, ...normalized], localResources);
   return osmResources;
 }
@@ -214,11 +226,28 @@ export function getOsmResourceCount() {
   return osmResources.length;
 }
 
-export function clearOsmResourcesForTest() {
+export function clearOsmResources() {
+  osmResourceGeneration += 1;
   osmResources = [];
 }
 
-function getAllResources() {
+export function clearOsmResourcesForTest() {
+  clearOsmResources();
+}
+
+function getResources(sourceFilter) {
+  if (sourceFilter === "local") {
+    return localResources;
+  }
+
+  if (sourceFilter === "osm") {
+    return osmResources;
+  }
+
+  if (sourceFilter === "none") {
+    return [];
+  }
+
   return [...localResources, ...osmResources];
 }
 

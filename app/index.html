@@ -99,8 +99,8 @@
                 <h3 id="resources-title">Find local help</h3>
               </div>
               <p class="data-note">
-                Local demo data is always available. Optional OpenStreetMap
-                results can be loaded once for the Görlitz demo area.
+                Local Görlitz demo fallback data is always available. Optional
+                OpenStreetMap results can be loaded for a submitted German location.
               </p>
             </div>
 
@@ -108,7 +108,7 @@
               <div id="resource-map" class="resource-map" aria-label="Map of matching repair resources"></div>
               <p class="osm-note">
                 Map tiles and optional live resources use OpenStreetMap data for
-                this hackathon demo. Local demo data remains the fallback.
+                this hackathon demo. Local Görlitz demo data remains the fallback.
               </p>
             </div>
 
@@ -126,6 +126,23 @@
                 <option value="unknown">Not sure</option>
               </select>
             </div>
+
+            <form class="location-form" id="location-form">
+              <label for="location-query">German city or postcode</label>
+              <div class="location-search-controls">
+                <input
+                  id="location-query"
+                  name="location"
+                  type="search"
+                  placeholder="Example: Dresden or 50667"
+                  required
+                >
+                <button type="submit">Search live OSM resources</button>
+              </div>
+              <p id="location-status" class="osm-status" data-state="idle" aria-live="polite">
+                Submit a German city or postcode to load live OpenStreetMap resources.
+              </p>
+            </form>
 
             <div class="live-row">
               <button type="button" class="secondary-button live-button" id="load-osm">

@@ -1,6 +1,7 @@
 import { analyzeProblem } from "./analyzer.js";
+import { resolveGermanLocation } from "./geocoding.js";
 import {
-  getOsmResourceCount,
+  clearOsmResources,
   loadOsmResources,
   matchResources,
   resourceTypes,
@@ -21,6 +22,9 @@ const recommendation = document.querySelector("#recommendation");
 const prevention = document.querySelector("#prevention");
 const resourceType = document.querySelector("#resource-type");
 const resourceCategory = document.querySelector("#resource-category");
+const locationForm = document.querySelector("#location-form");
+const locationQuery = document.querySelector("#location-query");
+const locationStatus = document.querySelector("#location-status");
 const helpSummary = document.querySelector("#help-summary");
 const resources = document.querySelector("#resources");
 const mapElement = document.querySelector("#resource-map");
@@ -32,6 +36,8 @@ let latestMatches = [];
 let map = null;
 let markerLayer = null;
 let isOsmLoading = false;
+let locationSearchSequence = 0;
+let resourceSourceFilter = "all";
 
 resourceType.replaceChildren(
   ...resourceTypes.map((type) => {
@@ -57,6 +63,7 @@ form.addEventListener("submit", (event) => {
 
 resourceType.addEventListener("change", renderResources);
 resourceCategory.addEventListener("change", renderResources);
+locationForm.addEventListener("submit", handleLocationSearch);
 loadOsmButton.addEventListener("click", handleLoadOsm);
 
 exampleButtons.forEach((button) => {
@@ -137,6 +144,7 @@ function renderResources() {
     riskLevel: latestResult.riskLevel,
     typeFilter: resourceType.value,
     categoryFilter: resourceCategory.value,
+    sourceFilter: resourceSourceFilter,
   });
   latestMatches = matches;
 
@@ -176,25 +184,88 @@ function renderResources() {
   );
 }
 
+async function handleLocationSearch(event) {
+  event.preventDefault();
+
+  const sequence = ++locationSearchSequence;
+  clearOsmResources();
+  resourceSourceFilter = "none";
+  clearResourceDisplay();
+  setLocationStatus("loading", "Resolving location and loading live OpenStreetMap resources...");
+
+  try {
+    const resolvedLocation = await resolveGermanLocation(locationQuery.value);
+
+    if (sequence !== locationSearchSequence) {
+      return;
+    }
+
+    centerMapOnLocation(resolvedLocation);
+    const loaded = await loadOsmResources({ bbox: resolvedLocation.bbox });
+
+    if (sequence !== locationSearchSequence) {
+      return;
+    }
+
+    if (loaded.length === 0) {
+      showLocalFallback();
+      setLocationStatus(
+        "empty",
+        `No live OpenStreetMap resources found near ${resolvedLocation.displayName}. Showing local Görlitz demo fallback.`,
+      );
+      return;
+    }
+
+    resourceSourceFilter = "osm";
+    renderResources();
+    setLocationStatus(
+      "success",
+      `Loaded ${loaded.length} live OpenStreetMap resources near ${resolvedLocation.displayName}.`,
+    );
+  } catch (error) {
+    if (sequence !== locationSearchSequence) {
+      return;
+    }
+
+    showLocalFallback();
+    setLocationStatus(
+      "error",
+      `Live location search failed. Showing local Görlitz demo fallback. ${error.message}`,
+    );
+  }
+}
+
 async function handleLoadOsm() {
   if (isOsmLoading) {
     return;
   }
 
+  const sequence = ++locationSearchSequence;
+  clearOsmResources();
+  resourceSourceFilter = "local";
+  renderResources();
   isOsmLoading = true;
   loadOsmButton.disabled = true;
   osmStatus.textContent = "Loading one bounded Overpass query for the Gorlitz area...";
 
   try {
-    const before = getOsmResourceCount();
     const loaded = await loadOsmResources();
-    const added = loaded.length - before;
-    osmStatus.textContent = added > 0
-      ? `Loaded ${added} OpenStreetMap resources. Demo data remains available.`
-      : "No new OpenStreetMap resources found for this query. Showing fallback demo data.";
+
+    if (sequence !== locationSearchSequence) {
+      return;
+    }
+
+    resourceSourceFilter = loaded.length > 0 ? "osm" : "local";
+    osmStatus.textContent = loaded.length > 0
+      ? `Loaded ${loaded.length} OpenStreetMap resources for the Görlitz demo area.`
+      : "No new OpenStreetMap resources found for this query. Showing local Görlitz demo fallback.";
     renderResources();
   } catch (error) {
-    osmStatus.textContent = `Live OSM request failed. Showing fallback demo data. ${error.message}`;
+    if (sequence !== locationSearchSequence) {
+      return;
+    }
+
+    osmStatus.textContent = `Live OSM request failed. Showing local Görlitz demo fallback. ${error.message}`;
     renderResources();
   } finally {
     isOsmLoading = false;
@@ -250,6 +321,31 @@ function updateMapMarkers(matches) {
     });
   } else {
     map.setView([51.152, 14.988], 13);
+  }
+}
+
+function clearResourceDisplay() {
+  latestMatches = [];
+  resources.replaceChildren();
+
+  if (markerLayer) {
+    markerLayer.clearLayers();
+  }
+}
+
+function showLocalFallback() {
+  resourceSourceFilter = "local";
+  renderResources();
+}
+
+function setLocationStatus(state, message) {
+  locationStatus.dataset.state = state;
+  locationStatus.textContent = message;
+}
+
+function centerMapOnLocation({ lat, lon }) {
+  if (map) {
+    map.setView([lat, lon], 13);
   }
 }
 
