@@ -80,6 +80,7 @@ Priorität spiegelt die Stufen aus `docs/funktionsabgleich.md` §5 wider:
 | P1 | [PROJ-41 ✨ Kontext-Verdichtung & Token-Budget](../features/PROJ-41-kontext-verdichtung.md) | `lotse`/Querschnitt · D19/D7 | Planned |
 | P1 | [PROJ-42 ✨ Ehrliche Degradations-Signalisierung](../features/PROJ-42-ehrliche-degradation-medien.md) | Querschnitt · D3 | Planned |
 | P1 | [PROJ-43 ✨ Beobachtbarkeit der Orchestrierung](../features/PROJ-43-orchestrierung-beobachtbarkeit.md) | Betrieb/Querschnitt | Planned |
+| P1 | [PROJ-44 Service-Point-Übergabe-Report (PDF- & Text-Download)](../features/PROJ-44-service-point-report-download.md) | `protokoll`/`vermittlung` · D14/D3/D23 | Planned |
 
 > **P3 = Stufe 4 (Architektur-Umbau):** LLM-Orchestrierung über `runtime-roles`
 > (OpenAI-only). Ersetzt den Single-Shot-Diagnosepfad durch einen orchestrierten Chat-Flow.
@@ -88,6 +89,10 @@ Priorität spiegelt die Stufen aus `docs/funktionsabgleich.md` §5 wider:
 > **Stufe 5 (Orchestrierungs-Härtung):** PROJ-39…43 — Nachträge aus der Betriebs-Analyse
 > vom 2026-05-31. Zwei Bugs (PROJ-39 kritisch, PROJ-40) + drei Verbesserungen (PROJ-41/42/43)
 > am Stufe-4-Flow. Empfohlen: PROJ-39 zuerst.
+>
+> **Stufe 6 (Übergabe & Output):** PROJ-44 — Service-Point-Übergabe-Report. Erweitert den
+> Export (PROJ-10) um einen server-seitig erzeugten PDF-Download mit zielgruppen-spezifischen
+> Report-Varianten (Annahmestelle/Werkstatt) plus Klartext/Markdown.
 
 ## Erfolgsmetriken
 

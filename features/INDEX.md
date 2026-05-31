@@ -4,7 +4,7 @@
 > §2 Edge-Cases, §3 Architektur-Lücken, §5 priorisierte Roadmap), fachlich verankert in
 > `docs/konzept.adoc` (Decision-Log) und `docs/runtime-roles/`.
 
-**Next Available ID:** PROJ-44
+**Next Available ID:** PROJ-46
 
 **Status-Legende:** Planned · In Progress · In Review · Done
 
@@ -116,6 +116,26 @@
 > (Robustheit) und PROJ-42 (baut auf 39 auf) parallel, PROJ-41 (Verdichtung) als
 > eigenständige Optimierung danach. PROJ-43 (Beobachtbarkeit) jederzeit unabhängig,
 > erleichtert die Verifikation der übrigen Punkte.
+
+## Stufe 6 — Übergabe & Output
+
+> Ausgabe-/Übergabe-Funktionen rund um den Vorgang. Erweitert den Export aus PROJ-10 um
+> zielgruppen-spezifische, server-seitig erzeugte Download-Artefakte.
+
+| ID | Feature | Rolle | D-Anker | Status | Abhängigkeiten |
+|---|---|---|---|---|---|
+| PROJ-44 | Service-Point-Übergabe-Report (PDF- & Text-Download, mehrere Zielgruppen-Varianten) | `protokoll`/`vermittlung` | D14/D3/D23 | Planned | PROJ-9, 10, 33 |
+
+## Stufe 7 — Echte Datengrundlage für die Vermittlung
+
+> Löst den in PROJ-11 vertagten offenen Punkt „OSM-Konkretisierung" ein: echte, lokal
+> gespeicherte Reparatur-Anbieter aus OpenStreetMap (Overpass) + reparatur-initiativen.de
+> statt des kuratierten Demo-Seeds. ODbL-konform (speicherbar, Attribution), `.env`-gesteuert,
+> per CLI manuell importierbar. Spec: `features/PROJ-45-anbieter-vorab-import.md`.
+
+| ID | Feature | Rolle | D-Anker | Status | Abhängigkeiten |
+|---|---|---|---|---|---|
+| PROJ-45 | Vorab-Import von Reparatur-Anbietern (OSM + reparatur-initiativen.de) | `vermittlung`/Betrieb | — | Architected | PROJ-11, 30 |
 
 ## Empfohlene Build-Reihenfolge
 
