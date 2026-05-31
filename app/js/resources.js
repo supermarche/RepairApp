@@ -210,7 +210,11 @@ export async function loadOsmResources(options = {}) {
   }
 
   const data = await response.json();
-  const normalized = (data.elements || [])
+  if (!data || !Array.isArray(data.elements)) {
+    throw new Error("Malformed Overpass response: expected elements array");
+  }
+
+  const normalized = data.elements
     .map(normalizeOsmElement)
     .filter(Boolean);
 
