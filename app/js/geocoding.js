@@ -1,6 +1,13 @@
 const config = window.REPAIR_APP_CONFIG;
 const kilometersPerDegreeLatitude = 111.32;
 const germanPostcodePattern = /^\d{5}$/;
+const adapterErrorCodes = new Set([
+  "no_acceptable_location",
+  "timeout",
+  "rate_limited",
+  "upstream_error",
+  "malformed_response",
+]);
 const settlementTypes = new Set([
   "city",
   "hamlet",
@@ -43,18 +50,33 @@ export async function resolveGermanLocation(query, fetchImpl = fetch) {
     response = await fetchImpl(`${config.geocodingEndpoint}?${params}`, {
       signal: controller.signal,
     });
+  } catch (error) {
+    throw classifyRequestError(error, "Geocoding");
   } finally {
     clearTimeout(timeoutId);
   }
 
   if (!response.ok) {
-    throw new Error(`Geocoding request failed with HTTP ${response.status}`);
+    throw adapterError(
+      response.status === 429 ? "rate_limited" : "upstream_error",
+      `Geocoding request failed with HTTP ${response.status}.`,
+    );
   }
 
-  const results = await response.json();
+  let results;
+
+  try {
+    results = await response.json();
+  } catch (error) {
+    throw preserveOrCreateAdapterError(
+      error,
+      "malformed_response",
+      "Malformed geocoding response.",
+    );
+  }
 
   if (!Array.isArray(results)) {
-    throw new Error("Geocoding response was malformed.");
+    throw adapterError("malformed_response", "Malformed geocoding response.");
   }
 
   if (results.length === 0) {
@@ -74,7 +96,10 @@ export async function resolveGermanLocation(query, fetchImpl = fetch) {
   const lon = parseCoordinate(result.lon);
 
   if (!isValidCoordinate(lat, lon)) {
-    throw new Error("Geocoding response contained invalid coordinates.");
+    throw adapterError(
+      "malformed_response",
+      "Geocoding response contained invalid coordinates.",
+    );
   }
 
   return {
@@ -140,6 +165,34 @@ function normalizeLocationName(value) {
 function noAcceptableLocationError() {
   const error = new Error("No acceptable German city or postcode was found.");
   error.code = "no_acceptable_location";
+  return error;
+}
+
+function classifyRequestError(error, serviceName) {
+  if (adapterErrorCodes.has(error?.code)) {
+    return error;
+  }
+
+  if (error?.name === "AbortError") {
+    return adapterError("timeout", `${serviceName} request timed out.`);
+  }
+
+  return preserveOrCreateAdapterError(
+    error,
+    "upstream_error",
+    `${serviceName} request failed.`,
+  );
+}
+
+function preserveOrCreateAdapterError(error, code, message) {
+  return adapterErrorCodes.has(error?.code)
+    ? error
+    : adapterError(code, message);
+}
+
+function adapterError(code, message) {
+  const error = new Error(message);
+  error.code = code;
   return error;
 }
 

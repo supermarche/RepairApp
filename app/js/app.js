@@ -38,6 +38,12 @@ let markerLayer = null;
 let isOsmLoading = false;
 let locationSearchSequence = 0;
 let resourceSourceFilter = "all";
+const locationFailureMessages = {
+  timeout: "External map service did not respond in time.",
+  rate_limited: "Public map service is temporarily limiting requests.",
+  upstream_error: "External map service is temporarily unavailable.",
+  malformed_response: "External map service returned an invalid response.",
+};
 
 resourceType.replaceChildren(
   ...resourceTypes.map((type) => {
@@ -246,9 +252,11 @@ async function handleLocationSearch(event) {
       return;
     }
 
+    const failure = getLocationFailure(error);
+    console.error(`Live location search failed: ${failure.state}`, error);
     setLocationStatus(
-      "error",
-      `Live location search failed. Showing local Görlitz demo fallback. ${error.message}`,
+      failure.state,
+      `${failure.message} Showing local Görlitz demo fallback.`,
     );
   }
 }
@@ -283,6 +291,7 @@ async function handleLoadOsm() {
       return;
     }
 
+    console.error("Live Görlitz OSM request failed.", error);
     osmStatus.textContent = `Live OSM request failed. Showing local Görlitz demo fallback. ${error.message}`;
     renderResources();
   } finally {
@@ -359,6 +368,17 @@ function showLocalFallback() {
 function setLocationStatus(state, message) {
   locationStatus.dataset.state = state;
   locationStatus.textContent = message;
+}
+
+function getLocationFailure(error) {
+  const state = Object.hasOwn(locationFailureMessages, error?.code)
+    ? error.code
+    : "upstream_error";
+
+  return {
+    state,
+    message: locationFailureMessages[state],
+  };
 }
 
 function centerMapOnLocation({ lat, lon }) {

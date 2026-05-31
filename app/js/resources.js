@@ -135,6 +135,12 @@ let osmResources = [];
 let osmResourceGeneration = 0;
 
 const config = window.REPAIR_APP_CONFIG;
+const adapterErrorCodes = new Set([
+  "timeout",
+  "rate_limited",
+  "upstream_error",
+  "malformed_response",
+]);
 
 const osmTypeToUiType = {
   "electronics-repair": "commercial",
@@ -201,17 +207,36 @@ export async function loadOsmResources(options = {}) {
       body: new URLSearchParams({ data: buildOverpassQuery(bbox) }),
       signal: controller.signal,
     });
+  } catch (error) {
+    throw classifyRequestError(error, "Overpass");
   } finally {
     clearTimeout(timeoutId);
   }
 
   if (!response.ok) {
-    throw new Error(`Overpass request failed with HTTP ${response.status}`);
+    throw adapterError(
+      response.status === 429 ? "rate_limited" : "upstream_error",
+      `Overpass request failed with HTTP ${response.status}.`,
+    );
   }
 
-  const data = await response.json();
+  let data;
+
+  try {
+    data = await response.json();
+  } catch (error) {
+    throw preserveOrCreateAdapterError(
+      error,
+      "malformed_response",
+      "Malformed Overpass response.",
+    );
+  }
+
   if (!data || !Array.isArray(data.elements)) {
-    throw new Error("Malformed Overpass response: expected elements array");
+    throw adapterError(
+      "malformed_response",
+      "Malformed Overpass response: expected elements array",
+    );
   }
 
   const normalized = data.elements
@@ -237,6 +262,34 @@ export function clearOsmResources() {
 
 export function clearOsmResourcesForTest() {
   clearOsmResources();
+}
+
+function classifyRequestError(error, serviceName) {
+  if (adapterErrorCodes.has(error?.code)) {
+    return error;
+  }
+
+  if (error?.name === "AbortError") {
+    return adapterError("timeout", `${serviceName} request timed out.`);
+  }
+
+  return preserveOrCreateAdapterError(
+    error,
+    "upstream_error",
+    `${serviceName} request failed.`,
+  );
+}
+
+function preserveOrCreateAdapterError(error, code, message) {
+  return adapterErrorCodes.has(error?.code)
+    ? error
+    : adapterError(code, message);
+}
+
+function adapterError(code, message) {
+  const error = new Error(message);
+  error.code = code;
+  return error;
 }
 
 function getResources(sourceFilter) {
