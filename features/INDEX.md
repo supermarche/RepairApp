@@ -156,7 +156,7 @@
 
 | ID | Feature | Rolle | D-Anker | Status | Abhängigkeiten |
 |---|---|---|---|---|---|
-| PROJ-47 | Spracheingabe im Chat (Diktat per OpenAI-Whisper) | `aufnahme`/Querschnitt | D9 | Planned | PROJ-37, 27, 30 |
+| PROJ-47 | Spracheingabe im Chat (Diktat per OpenAI-Whisper) | `aufnahme`/Querschnitt | D9 | In Review | PROJ-37, 27, 30 |
 
 ## Stufe 10 — Prompt-Caching beobachtbar machen & steuern
 

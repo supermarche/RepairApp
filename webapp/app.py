@@ -863,6 +863,8 @@ def api_transkription():
     """PROJ-27 — Audio-Transkription (optional).
 
     Body: Rohdaten-Audio oder multipart.
+    Sprache (optional, de/en, Default de): Form-Feld ``lang`` → Query ``?lang=``
+    → JSON-Body ``lang`` → Default ``"de"``. Nur de/en zulässig (sonst de).
     → {text, source:"whisper|hinweis", hinweis?}
     """
     audio_bytes = None
@@ -873,7 +875,18 @@ def api_transkription():
     elif request.data:
         audio_bytes = request.data
 
-    result = multimodal.transkribiere(audio_bytes)
+    # Sprache ermitteln: Form-Feld → Query-Param → JSON-Body → Default "de"
+    lang = (
+        (request.form.get("lang") or "").strip()
+        or (request.args.get("lang") or "").strip()
+    )
+    if not lang:
+        body = request.get_json(silent=True) or {}
+        lang = str(body.get("lang") or "").strip()
+    if lang not in ("de", "en"):
+        lang = "de"
+
+    result = multimodal.transkribiere(audio_bytes, lang=lang)
     return jsonify(result)
 
 

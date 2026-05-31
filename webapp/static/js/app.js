@@ -459,6 +459,17 @@
       'report.copy': 'Kopieren',
       'report.copyOk': 'Report in die Zwischenablage kopiert.',
       'report.pdfFail': 'PDF derzeit nicht verfügbar — bitte Markdown oder Text laden.',
+      // Spracheingabe (PROJ-47)
+      'chat.micStart': 'Spracheingabe starten',
+      'chat.micStop': 'Aufnahme beenden',
+      'chat.micListening': '🎙️ Ich höre zu …',
+      'chat.micTranscribing': 'Wird transkribiert …',
+      'chat.micUnavailable': 'Spracheingabe nicht verfügbar',
+      'chat.micRetry': '🔁 Wiederholen',
+      'chat.micAppend': '➕ Ergänzen',
+      'chat.micDenied': 'Mikrofon-Zugriff verweigert — bitte in den Browser-Einstellungen freigeben.',
+      'chat.micNothing': 'Nichts erkannt — bitte erneut versuchen oder Text eingeben.',
+      'chat.micUnavailableNow': 'Spracheingabe gerade nicht verfügbar — bitte Text eingeben.',
     },
     en: {
       // Navigation / General
@@ -906,6 +917,17 @@
       'report.copy': 'Copy',
       'report.copyOk': 'Report copied to clipboard.',
       'report.pdfFail': 'PDF currently unavailable — please use Markdown or Text.',
+      // Voice input (PROJ-47)
+      'chat.micStart': 'Start voice input',
+      'chat.micStop': 'Stop recording',
+      'chat.micListening': '🎙️ Listening …',
+      'chat.micTranscribing': 'Transcribing …',
+      'chat.micUnavailable': 'Voice input not available',
+      'chat.micRetry': '🔁 Retry',
+      'chat.micAppend': '➕ Append',
+      'chat.micDenied': 'Microphone access denied — please allow it in your browser settings.',
+      'chat.micNothing': 'Nothing recognised — please try again or type.',
+      'chat.micUnavailableNow': 'Voice input currently unavailable — please type instead.',
     }
   };
 
@@ -1040,6 +1062,13 @@
     reportOpen: false,       // Report-Sheet sichtbar?
     reportVariante: 'uebergabe', // gewählte Variante
     reportVarianten: [],     // [{key, label, dateiname}] — geladen via /report/varianten
+    // PROJ-47: Spracheingabe
+    recording: false,        // Mikrofon-Aufnahme läuft
+    transcribing: false,     // Transkription läuft (nach Stopp)
+    voiceBaseText: '',       // Feldinhalt VOR letzter Sprach-Aufnahme
+    lastVoiceText: '',       // zuletzt per Sprache erfasster Anteil
+    voiceUsed: false,        // mindestens eine Aufnahme abgeschlossen (Wiederholen/Ergänzen anzeigen)
+    micPendingAction: null,  // 'start'|'append' — Aktion nach Consent-Accept ausführen
   };
   window.RepairAppState = State; // Debug-Hook
 
@@ -1066,7 +1095,8 @@
     // Backend verlangt Text (empty→400). Bei reinen Anhängen einen kurzen
     // Default-Text mitsenden, damit Senden mit Bild + leerem Text funktioniert.
     if (!text && medienIds.length) text = t('chat.attachDefaultText');
-    if (!text || State.pending || State.abgebrochen || State.mediaUploading) return;
+    if (!text || State.pending || State.abgebrochen || State.mediaUploading ||
+        State.recording || State.transcribing) return;
 
     function doSend(vorgangId) {
       var pending = State.pendingMedien.slice();
@@ -1127,6 +1157,10 @@
   }
 
   function neuerVorgang() {
+    // Laufende Aufnahme abbrechen
+    if (State.recording && window.VoiceRecorder) {
+      try { window.VoiceRecorder.abbrechen(); } catch (e) {}
+    }
     State.verlauf = [];
     State.draft = '';
     State.error = null;
@@ -1137,6 +1171,13 @@
     State.mediaConsentOpen = false;
     State.mediaUploading = false;
     State._pendingFiles = null;
+    // PROJ-47: Sprach-Zustand zurücksetzen
+    State.recording = false;
+    State.transcribing = false;
+    State.voiceBaseText = '';
+    State.lastVoiceText = '';
+    State.voiceUsed = false;
+    State.micPendingAction = null;
     try { history.replaceState(null, '', location.pathname); } catch (e) {}
     render();
     initVorgang().then(function () { render(); });
@@ -1215,8 +1256,14 @@
     // Zwischengespeicherte Auswahl jetzt automatisch hochladen.
     var queued = State._pendingFiles;
     State._pendingFiles = null;
+    var micAction = State.micPendingAction;
+    State.micPendingAction = null;
     if (queued && queued.length) {
       verarbeiteDateien(queued);
+    } else if (micAction) {
+      // PROJ-47: nach Consent-Accept zwischengespeicherte Mikrofon-Aktion ausführen
+      if (micAction === 'start') _startAufnahme();
+      else if (micAction === 'append') _startAufnahme(true);
     } else {
       render();
     }
@@ -1224,7 +1271,119 @@
   function onMediaConsentDecline() {
     State.mediaConsentOpen = false;
     State._pendingFiles = null; // verworfene Auswahl nicht aufheben
+    State.micPendingAction = null;
     render();
+  }
+
+  /* ===================== PROJ-47: SPRACHEINGABE-HANDLER ===================== */
+
+  // Interne Hilfsfunktion: startet eine Aufnahme (ggf. im Ergänzen-Modus).
+  // appendMode=true: Feldinhalt vor Aufnahme als voiceBaseText merken (Ergänzen).
+  // appendMode=false/unset: voiceBaseText auf aktuellen draft setzen (Wiederholen ab Anfang).
+  function _startAufnahme(appendMode) {
+    var vr = window.VoiceRecorder;
+    if (!vr || !vr.verfuegbar()) {
+      toast(t('chat.micUnavailable'));
+      return;
+    }
+    // Feldinhalt vor dieser Aufnahme merken
+    State.voiceBaseText = State.draft;
+    State.recording = true;
+    render();
+    vr.starten().catch(function (err) {
+      State.recording = false;
+      render();
+      if (err && err.code === 'no_support') {
+        // Nichts tun — Button ist bereits disabled, kein Toast nötig
+      } else if (err && err.code === 'no_permission') {
+        toast(t('chat.micDenied'));
+      } else {
+        toast(t('chat.micUnavailableNow'));
+      }
+    });
+  }
+
+  // Mikrofon-Button geklickt: Aufnahme starten oder stoppen.
+  function onMicClick() {
+    var vr = window.VoiceRecorder;
+    if (!vr || !vr.verfuegbar()) return; // Button sollte disabled sein, nur Absicherung
+
+    if (State.recording) {
+      // Aufnahme beenden → transkribieren
+      State.recording = false;
+      State.transcribing = true;
+      render();
+      vr.stoppenUndTranskribieren({ lang: State.lang }).then(function (res) {
+        State.transcribing = false;
+        if (res.ok) {
+          // Erkannten Text an den Feldinhalt anfügen (voiceBaseText + neuer Text)
+          var neuerText = res.text;
+          State.draft = State.voiceBaseText + (State.voiceBaseText && neuerText ? ' ' : '') + neuerText;
+          State.lastVoiceText = neuerText;
+          State.voiceUsed = true;
+        } else {
+          // Fehlerfall: source='hinweis' oder leerer Text
+          if (res.source !== 'whisper') {
+            toast(t('chat.micUnavailableNow'));
+          } else {
+            toast(t('chat.micNothing'));
+          }
+          // Feldinhalt unverändert lassen
+        }
+        render();
+        // Nach dem Rendern Eingabe fokussieren
+        try {
+          if (State.appEl) {
+            var inp = State.appEl.querySelector('.rk-chat-input');
+            if (inp) { inp.value = State.draft; inp.focus(); }
+          }
+        } catch (e) {}
+      });
+      return;
+    }
+
+    // Noch keine Aufnahme → Consent-Gate prüfen
+    if (!State.medienConsent) {
+      State.micPendingAction = 'start';
+      State.mediaConsentOpen = true;
+      render();
+      return;
+    }
+
+    _startAufnahme(false);
+  }
+
+  // „Wiederholen": lastVoiceText-Anteil ersetzen — neue Aufnahme, voiceBaseText bleibt.
+  function onMicRetry() {
+    if (State.recording || State.transcribing || State.pending) return;
+    var vr = window.VoiceRecorder;
+    if (!vr || !vr.verfuegbar()) return;
+    // voiceBaseText bleibt unverändert (war schon gesetzt), neue Aufnahme startet
+    State.recording = true;
+    render();
+    vr.starten().catch(function (err) {
+      State.recording = false;
+      render();
+      if (err && err.code === 'no_permission') {
+        toast(t('chat.micDenied'));
+      } else if (err && err.code !== 'no_support') {
+        toast(t('chat.micUnavailableNow'));
+      }
+    });
+  }
+
+  // „Ergänzen": neuen Aufnahme-Text an aktuellen Feldinhalt anhängen.
+  function onMicAppend() {
+    if (State.recording || State.transcribing || State.pending) return;
+    var vr = window.VoiceRecorder;
+    if (!vr || !vr.verfuegbar()) return;
+    if (!State.medienConsent) {
+      State.micPendingAction = 'append';
+      State.mediaConsentOpen = true;
+      render();
+      return;
+    }
+    _startAufnahme(true);
   }
 
   /* ===================== PROJ-44: REPORT-HANDLER ===================== */
@@ -1398,13 +1557,20 @@
       onReportDownloadMd: onReportDownloadMd,
       onReportDownloadTxt: onReportDownloadTxt,
       onReportCopy: onReportCopy,
+      // PROJ-47: Spracheingabe
+      recording: State.recording,
+      transcribing: State.transcribing,
+      voiceUsed: State.voiceUsed,
+      onMicClick: onMicClick,
+      onMicRetry: onMicRetry,
+      onMicAppend: onMicAppend,
     });
     State.appEl.replaceChildren(screen);
     // Nach dem Rendern ans Ende scrollen + Eingabe fokussieren.
     try {
       var body = State.appEl.querySelector('.rk-body');
       if (body) body.scrollTop = body.scrollHeight;
-      if (!State.pending && !State.abgebrochen) {
+      if (!State.pending && !State.abgebrochen && !State.recording && !State.transcribing) {
         var inp = State.appEl.querySelector('.rk-chat-input');
         if (inp) inp.focus();
       }

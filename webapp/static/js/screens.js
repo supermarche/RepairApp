@@ -1954,13 +1954,14 @@
       ));
     }
 
-    var busy = props.pending || props.mediaUploading;
+    // PROJ-47: busy schließt Aufnahme/Transkription ein → Senden/Anhang sperren.
+    var busy = props.pending || props.mediaUploading || props.recording || props.transcribing;
 
     var input = h('input', {
       class: 'rk-chat-input', type: 'text',
       placeholder: t('start.placeholder'),
       value: props.draft || '',
-      disabled: busy ? true : null,
+      disabled: (busy && !props.recording && !props.transcribing) ? true : null,
       onInput: function (e) { if (props.setDraft) props.setDraft(e.target.value); },
       onKeydown: function (e) {
         if (e.key === 'Enter') { e.preventDefault(); if (props.onSend) props.onSend(); }
@@ -1988,6 +1989,22 @@
       disabled: busy ? true : null,
       onClick: function () { if (props.onSend) props.onSend(); },
     }, '➤');
+
+    // PROJ-47: Mikrofon-Button.
+    var micVerfuegbar = !!(window.VoiceRecorder && window.VoiceRecorder.verfuegbar());
+    var micLabel = props.recording ? t('chat.micStop')
+                 : props.transcribing ? t('chat.micTranscribing')
+                 : micVerfuegbar ? t('chat.micStart')
+                 : t('chat.micUnavailable');
+    var micDisabled = !micVerfuegbar || props.pending || props.mediaUploading || props.transcribing;
+    var micBtn = h('button', {
+      class: 'rk-chat-mic' + (props.recording ? ' rk-chat-mic-active' : '') +
+             (props.transcribing ? ' rk-chat-mic-busy' : ''),
+      'aria-label': micLabel,
+      title: micLabel,
+      disabled: micDisabled ? true : null,
+      onClick: function () { if (props.onMicClick) props.onMicClick(); },
+    }, props.recording ? '⏹' : props.transcribing ? '⏳' : '🎙️');
 
     // PROJ-44: Report-Button im right-Slot; bleibt neben dem Restart-Button wenn beendet.
     var reportBtn = props.vorgangId
@@ -2036,10 +2053,41 @@
       attachNote = h('div', { class: 'rk-chat-attach-note' }, t('chat.attachHint'));
     }
 
+    // PROJ-47: Live-Indikator während Aufnahme/Transkription.
+    var voiceIndicator = null;
+    if (props.recording) {
+      voiceIndicator = h('div', { class: 'rk-chat-voice-indicator', role: 'status' },
+        h('span', { class: 'rk-chat-voice-pulse' }),
+        t('chat.micListening')
+      );
+    } else if (props.transcribing) {
+      voiceIndicator = h('div', { class: 'rk-chat-voice-indicator rk-chat-voice-indicator-busy', role: 'status' },
+        t('chat.micTranscribing')
+      );
+    }
+
+    // PROJ-47: Wiederholen/Ergänzen-Chips nach abgeschlossener Aufnahme.
+    var voiceChips = (props.voiceUsed && !props.recording && !props.transcribing && !props.pending)
+      ? h('div', { class: 'rk-chat-voice-chips' },
+          h('button', {
+            class: 'rk-chat-voice-chip',
+            'aria-label': t('chat.micRetry'),
+            onClick: function () { if (props.onMicRetry) props.onMicRetry(); },
+          }, t('chat.micRetry')),
+          h('button', {
+            class: 'rk-chat-voice-chip',
+            'aria-label': t('chat.micAppend'),
+            onClick: function () { if (props.onMicAppend) props.onMicAppend(); },
+          }, t('chat.micAppend'))
+        )
+      : null;
+
     var inputrow = h('div', { class: 'rk-chat-inputbox' },
       chips,
       attachNote,
-      h('div', { class: 'rk-chat-inputrow' }, fileInput, attachBtn, input, sendBtn)
+      voiceIndicator,
+      voiceChips,
+      h('div', { class: 'rk-chat-inputrow' }, fileInput, attachBtn, micBtn, input, sendBtn)
     );
 
     // PROJ-27 Consent-Sheet vor dem ersten Upload.

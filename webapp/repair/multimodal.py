@@ -174,11 +174,18 @@ def get_medium_data_url(mid: str) -> str | None:
     return f"data:{content_type};base64,{b64}"
 
 
-def transkribiere(audio_bytes: bytes | None = None) -> dict:
+def transkribiere(audio_bytes: bytes | None = None, lang: str = "de") -> dict:
     """Optionale Audio-Transkription via Whisper (falls Key gesetzt).
 
-    Ohne Backend: freundlicher Hinweis, kein harter Fehler.
+    ``lang`` wählt die Transkriptionssprache (``"de"`` oder ``"en"``); alles
+    andere/leer/None wird auf ``"de"`` normalisiert.  Die Rückgabe-Form ist
+    unverändert: ``{text, source:"whisper"}`` bei Erfolg, sonst
+    ``{text:"", source:"hinweis", hinweis:"..."}``.  Scheitert nie hart.
     """
+    # Sprach-Normalisierung: nur de/en zulässig, alles andere → de
+    if not lang or lang not in ("de", "en"):
+        lang = "de"
+
     if not audio_bytes:
         return {
             "text": "",
@@ -210,9 +217,10 @@ def transkribiere(audio_bytes: bytes | None = None) -> dict:
                 result = client.audio.transcriptions.create(
                     model=config.whisper_model(),
                     file=f,
-                    language="de",
+                    language=lang,
                 )
-            log.info("Transkription erfolgreich: source=whisper (%d Bytes Audio)", len(audio_bytes))
+            log.info("Transkription erfolgreich: source=whisper lang=%s (%d Bytes Audio)",
+                     lang, len(audio_bytes))
             return {"text": result.text or "", "source": "whisper"}
         finally:
             try:
