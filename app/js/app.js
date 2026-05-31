@@ -43,6 +43,7 @@ const locationFailureMessages = {
   rate_limited: "Public map service is temporarily limiting requests.",
   upstream_error: "External map service is temporarily unavailable.",
   malformed_response: "External map service returned an invalid response.",
+  configuration_error: "Local live-map integration configuration is invalid.",
 };
 
 resourceType.replaceChildren(

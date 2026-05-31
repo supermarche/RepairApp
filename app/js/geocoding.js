@@ -7,6 +7,7 @@ const adapterErrorCodes = new Set([
   "rate_limited",
   "upstream_error",
   "malformed_response",
+  "configuration_error",
 ]);
 const settlementTypes = new Set([
   "city",
@@ -26,6 +27,7 @@ export async function resolveGermanLocation(query, fetchImpl = fetch) {
     throw new Error("Enter a German city or postcode.");
   }
 
+  const endpoint = validateEndpoint(config?.geocodingEndpoint, "Geocoding");
   const isPostcode = germanPostcodePattern.test(normalizedQuery);
   const params = new URLSearchParams({
     format: "jsonv2",
@@ -47,7 +49,7 @@ export async function resolveGermanLocation(query, fetchImpl = fetch) {
   let response;
 
   try {
-    response = await fetchImpl(`${config.geocodingEndpoint}?${params}`, {
+    response = await fetchImpl(`${endpoint}?${params}`, {
       signal: controller.signal,
     });
   } catch (error) {
@@ -194,6 +196,26 @@ function adapterError(code, message) {
   const error = new Error(message);
   error.code = code;
   return error;
+}
+
+function validateEndpoint(value, serviceName) {
+  if (typeof value !== "string" || !value.trim()) {
+    throw adapterError("configuration_error", `${serviceName} endpoint configuration is invalid.`);
+  }
+
+  let endpoint;
+
+  try {
+    endpoint = new URL(value);
+  } catch {
+    throw adapterError("configuration_error", `${serviceName} endpoint configuration is invalid.`);
+  }
+
+  if (!["http:", "https:"].includes(endpoint.protocol)) {
+    throw adapterError("configuration_error", `${serviceName} endpoint configuration is invalid.`);
+  }
+
+  return endpoint.toString();
 }
 
 function buildLocalBbox(lat, lon) {

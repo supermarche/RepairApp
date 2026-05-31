@@ -140,6 +140,7 @@ const adapterErrorCodes = new Set([
   "rate_limited",
   "upstream_error",
   "malformed_response",
+  "configuration_error",
 ]);
 
 const osmTypeToUiType = {
@@ -191,13 +192,14 @@ export async function loadOsmResources(options = {}) {
   const { bbox, fetchImpl } = typeof options === "function"
     ? { fetchImpl: options }
     : options;
+  const endpoint = validateEndpoint(config?.overpassEndpoint, "Overpass");
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), config.overpassBrowserTimeoutMs);
   const generation = osmResourceGeneration;
   let response;
 
   try {
-    response = await (fetchImpl || fetch)(config.overpassEndpoint, {
+    response = await (fetchImpl || fetch)(endpoint, {
       method: "POST",
       headers: {
         "Accept": "application/json",
@@ -290,6 +292,26 @@ function adapterError(code, message) {
   const error = new Error(message);
   error.code = code;
   return error;
+}
+
+function validateEndpoint(value, serviceName) {
+  if (typeof value !== "string" || !value.trim()) {
+    throw adapterError("configuration_error", `${serviceName} endpoint configuration is invalid.`);
+  }
+
+  let endpoint;
+
+  try {
+    endpoint = new URL(value);
+  } catch {
+    throw adapterError("configuration_error", `${serviceName} endpoint configuration is invalid.`);
+  }
+
+  if (!["http:", "https:"].includes(endpoint.protocol)) {
+    throw adapterError("configuration_error", `${serviceName} endpoint configuration is invalid.`);
+  }
+
+  return endpoint.toString();
 }
 
 function getResources(sourceFilter) {
