@@ -37,12 +37,12 @@ kommunizieren.
 
 ## Akzeptanzkriterien
 
-- [ ] Das Medien-/Extraktions-Tool unterscheidet im Ergebnis klar zwischen `technischer_fehler` und `nichts_erkannt` (eigenes Feld/Status), nicht nur ein gemeinsames `nichtsErkannt`.
-- [ ] Bei technischem Fehler kommuniziert die App dem Nutzer ehrlich, dass die Auswertung nicht durchgeführt werden konnte — keine Formulierung, die eine erfolgte Prüfung suggeriert.
-- [ ] Bei erfolgreicher, aber ergebnisloser Auswertung bleibt die bestehende „nichts erkannt"-Formulierung inkl. Foto-Tipp zulässig.
-- [ ] Der Vertrauens-Indikator/Hinweis (D3, PROJ-25) wird bei technischem Fehler nicht als „geprüft mit Konfidenz" dargestellt.
-- [ ] Technische Fehler werden mit Ursache protokolliert (PROJ-28/29) und sind von Nullresultaten unterscheidbar.
-- [ ] Ein Test prüft beide Pfade: erzwungener technischer Fehler → ehrliche Fehlermeldung; gemockte leere Erkennung → „nichts erkannt" + Tipp.
+- [x] Das Medien-/Extraktions-Tool unterscheidet im Ergebnis klar zwischen `technischer_fehler` und `nichts_erkannt` (eigenes Feld/Status), nicht nur ein gemeinsames `nichtsErkannt`.
+- [x] Bei technischem Fehler kommuniziert die App dem Nutzer ehrlich, dass die Auswertung nicht durchgeführt werden konnte — keine Formulierung, die eine erfolgte Prüfung suggeriert.
+- [x] Bei erfolgreicher, aber ergebnisloser Auswertung bleibt die bestehende „nichts erkannt"-Formulierung inkl. Foto-Tipp zulässig.
+- [x] Der Vertrauens-Indikator/Hinweis (D3, PROJ-25) wird bei technischem Fehler nicht als „geprüft mit Konfidenz" dargestellt.
+- [x] Technische Fehler werden mit Ursache protokolliert (PROJ-28/29) und sind von Nullresultaten unterscheidbar.
+- [x] Ein Test prüft beide Pfade: erzwungener technischer Fehler → ehrliche Fehlermeldung; gemockte leere Erkennung → „nichts erkannt" + Tipp.
 
 ## Edge Cases
 
@@ -65,7 +65,15 @@ kommunizieren.
 _Wird von /architecture hinzugefügt_
 
 ## QA Test Results
-_Wird von /qa hinzugefügt_
+
+**Verifiziert 2026-05-31 (nachgetragen):** Umgesetzt in `repair/vision.py` — das Ergebnis trägt
+ein `status`-Feld, das ehrlich zwischen `ok`, `nichts_erkannt`, `technischer_fehler` und
+`keine_medien` unterscheidet (statt des historisch vermengten `nichtsErkannt`). Bei technischem
+Fehler wird auf WARNING geloggt („keine Auswertung durchgeführt"), `nichtsErkannt`/`source`
+bleiben rückwärtskompatibel. `repair/tools.py` reicht den Status über `extrahiere_aus_medien`
+an den Orchestrator durch (Tool-Beschreibung weist die Fälle aus). Tests: `tests/test_vision.py`
+(leere Felder vs. nichts erkannt, Pfad ohne Vision-Backend, keine Medien). Gesamte Suite
+**237 passed**.
 
 ## Deployment
 _Wird von /deploy hinzugefügt_

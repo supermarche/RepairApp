@@ -44,13 +44,13 @@ ohne den fachlichen Ablauf zu verändern.
 
 ## Akzeptanzkriterien
 
-- [ ] `lade_rolle`-Aufrufe werden in `repair.log` protokolliert (Rollenname + Vorgang-ID, Level INFO), nicht nur in der DB.
-- [ ] Tool-Aufrufe des Orchestrators werden in `repair.log` mit Tool-Namen festgehalten (mindestens auf DEBUG; keine sensiblen Klartext-Argumente über das übliche PII-Maß hinaus, vgl. PROJ-29).
-- [ ] Das Anfrage-Protokoll (PROJ-28) weist je Turn die in diesem Turn tatsächlich **geladenen Rollen** und **ausgeführten Tools** aus — statt des pauschalen, vom Endpunkt abgeleiteten „Rolle `lotse`".
-- [ ] Ist in einem Turn keine Fachrolle geladen worden, ist das im Protokoll als solches erkennbar (z. B. „nur Lotse-Kontext"), kein irreführender Fachrollen-Eintrag.
-- [ ] Die Protokoll-Darstellung bleibt rückwärts lesbar (bestehende Abschnitte „KI-Entscheidung"/„Token-Statistik" bleiben erhalten); die Rollen-/Tool-Angabe ergänzt sie.
-- [ ] Ein automatischer Test prüft: ein Turn mit `lade_rolle("diagnose")` + einem Daten-Tool erzeugt entsprechende Log-Einträge und die korrekte Rollen-/Tool-Ausweisung im Protokoll.
-- [ ] Keine Änderung am fachlichen Chat-Ergebnis (`antwort_text`, `karten`, `abgebrochen`) durch die zusätzliche Beobachtbarkeit.
+- [x] `lade_rolle`-Aufrufe werden in `repair.log` protokolliert (Rollenname + Vorgang-ID, Level INFO), nicht nur in der DB.
+- [x] Tool-Aufrufe des Orchestrators werden in `repair.log` mit Tool-Namen festgehalten (mindestens auf DEBUG; keine sensiblen Klartext-Argumente über das übliche PII-Maß hinaus, vgl. PROJ-29).
+- [x] Das Anfrage-Protokoll (PROJ-28) weist je Turn die in diesem Turn tatsächlich **geladenen Rollen** und **ausgeführten Tools** aus — statt des pauschalen, vom Endpunkt abgeleiteten „Rolle `lotse`".
+- [x] Ist in einem Turn keine Fachrolle geladen worden, ist das im Protokoll als solches erkennbar (z. B. „nur Lotse-Kontext"), kein irreführender Fachrollen-Eintrag.
+- [x] Die Protokoll-Darstellung bleibt rückwärts lesbar (bestehende Abschnitte „KI-Entscheidung"/„Token-Statistik" bleiben erhalten); die Rollen-/Tool-Angabe ergänzt sie.
+- [x] Ein automatischer Test prüft: ein Turn mit `lade_rolle("diagnose")` + einem Daten-Tool erzeugt entsprechende Log-Einträge und die korrekte Rollen-/Tool-Ausweisung im Protokoll.
+- [x] Keine Änderung am fachlichen Chat-Ergebnis (`antwort_text`, `karten`, `abgebrochen`) durch die zusätzliche Beobachtbarkeit.
 
 ## Edge Cases
 
@@ -75,7 +75,16 @@ ohne den fachlichen Ablauf zu verändern.
 _Wird von /architecture hinzugefügt_
 
 ## QA Test Results
-_Wird von /qa hinzugefügt_
+
+**Verifiziert 2026-05-31 (nachgetragen):** Umgesetzt in `repair/orchestrator.py` —
+`lade_rolle`-Aufrufe werden auf **INFO** geloggt („Rolle geladen: %s (vorgang=%s)"), Tool-Aufrufe
+auf DEBUG (ohne PII-Argumente). Pro Turn werden die tatsächlich geladenen Rollen/Tools in
+`_turn_rollen`/`_turn_tools` geführt; `repair/protokoll_log.py` weist sie je Turn aus
+(`_orchestrierung_markdown`, „Geladene Rollen" bzw. „nur Lotse-Kontext") statt des pauschalen,
+vom Endpunkt abgeleiteten „Rolle `lotse`". Kein Eingriff in `antwort_text`/`karten`/`abgebrochen`.
+Tests: `tests/test_orchestrator_robustheit.py` (lade_rolle auf INFO + `_turn_rollen`,
+Reihenfolge mehrerer Rollen, fehlgeschlagener Tool-Call markiert, Protokoll-Ausweisung inkl.
+„nur Lotse-Kontext"). Gesamte Suite **237 passed**.
 
 ## Deployment
 _Wird von /deploy hinzugefügt_

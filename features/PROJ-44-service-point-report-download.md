@@ -1,6 +1,6 @@
 # PROJ-44: Service-Point-Übergabe-Report (PDF- & Text-Download, mehrere Zielgruppen-Varianten)
 
-## Status: Planned
+## Status: In Review
 
 **Erstellt:** 2026-05-31
 **Zuletzt aktualisiert:** 2026-05-31
@@ -256,6 +256,3 @@ Vorgang-ID) mit korrektem Inhalt inkl. „in Bearbeitung"-Markierung für unvoll
 ## Deployment
 _Wird von /deploy hinzugefügt_ — **Hinweis:** kein Merge durchgeführt (auf Wunsch). Stand: implementiert
 & verifiziert auf Branch `worktree-features-chatgpt`; Status „In Review".
-
-## Deployment
-_Wird von /deploy hinzugefügt_

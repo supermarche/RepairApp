@@ -39,12 +39,12 @@ liegende **fehlende Fehlerkapselung** besteht weiter und betrifft jede künftige
 
 ## Akzeptanzkriterien
 
-- [ ] Ein während `run_turn` auftretender OpenAI-/Netzwerkfehler wird gefangen und führt zu `{error, code:"ai_error"}` (HTTP 502), keiner unbehandelten Exception.
-- [ ] Vor dem Fehler im selben Turn erzeugte Karten gehen nicht verloren — sie sind im Ergebnis enthalten oder im persistierten Vorgang verfügbar.
-- [ ] Der Vorgangs-Zustand bleibt nach einem Turn-Fehler konsistent (kein halb geschriebener `messages`-Verlauf, der den nächsten Turn bricht).
-- [ ] Der Fehler wird mit Fehlerklasse/-ursache protokolliert (PROJ-28/29), ohne zusätzliche Klartext-PII über das übliche Maß hinaus.
-- [ ] Das PROJ-35-AC „Netzwerk-/API-Fehler mitten im Turn → definierter Fehler, kein Absturz" ist nachweislich erfüllt.
-- [ ] Ein automatischer Test simuliert einen werfenden `create()`-Aufruf und prüft: Rückgabe `ai_error`, kein Throw, Karten-/State-Verhalten wie spezifiziert.
+- [x] Ein während `run_turn` auftretender OpenAI-/Netzwerkfehler wird gefangen und führt zu `{error, code:"ai_error"}` (HTTP 502), keiner unbehandelten Exception.
+- [x] Vor dem Fehler im selben Turn erzeugte Karten gehen nicht verloren — sie sind im Ergebnis enthalten oder im persistierten Vorgang verfügbar.
+- [x] Der Vorgangs-Zustand bleibt nach einem Turn-Fehler konsistent (kein halb geschriebener `messages`-Verlauf, der den nächsten Turn bricht).
+- [x] Der Fehler wird mit Fehlerklasse/-ursache protokolliert (PROJ-28/29), ohne zusätzliche Klartext-PII über das übliche Maß hinaus.
+- [x] Das PROJ-35-AC „Netzwerk-/API-Fehler mitten im Turn → definierter Fehler, kein Absturz" ist nachweislich erfüllt.
+- [x] Ein automatischer Test simuliert einen werfenden `create()`-Aufruf und prüft: Rückgabe `ai_error`, kein Throw, Karten-/State-Verhalten wie spezifiziert.
 
 ## Edge Cases
 
@@ -68,7 +68,15 @@ liegende **fehlende Fehlerkapselung** besteht weiter und betrifft jede künftige
 _Wird von /architecture hinzugefügt_
 
 ## QA Test Results
-_Wird von /qa hinzugefügt_
+
+**Verifiziert 2026-05-31 (nachgetragen):** Umgesetzt in `repair/orchestrator.py` —
+`_create_chat()` + try/except um den `create()`-Call (`run_turn`, Z. 178-202): jeder API-/
+Netzwerkfehler → Teilergebnis `{…, "code": "ai_error"}` (kein Throw), bereits gesammelte Karten
+bleiben erhalten, kein hängender halber `messages`-Verlauf. `app.py` übersetzt `ai_error` in
+**HTTP 502**. Fehlerklasse wird auf WARNING geloggt (ohne zusätzliche PII).
+Tests: `tests/test_orchestrator_robustheit.py` (Fehler in erster Iteration, nach Tool-Call mit
+Karten-Erhalt, Timeout, State-Konsistenz, wiederholter Fehler über Turns),
+`tests/test_api_chat.py::test_chat_ai_error_gibt_502`. Gesamte Suite **237 passed**.
 
 ## Deployment
 _Wird von /deploy hinzugefügt_

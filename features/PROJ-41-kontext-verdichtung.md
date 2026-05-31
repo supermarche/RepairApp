@@ -38,13 +38,13 @@ erhalten bleiben. Der stabile System-Präfix (PROJ-35) bleibt unangetastet/cache
 
 ## Akzeptanzkriterien
 
-- [ ] Geladene Rollen-Volltexte werden nach Gebrauch aus dem fortgeschriebenen Verlauf entfernt oder durch einen kompakten Verweis ersetzt, sodass sie nicht in jedem Folge-Turn erneut gesendet werden.
-- [ ] Bei langen Vorgängen wird der ältere Verlauf zu einem kompakten Zustands-Digest verdichtet (erkanntes Gerät, Symptome, bisherige Karten/Entscheidungen), während die jüngsten Nachrichten wörtlich erhalten bleiben.
-- [ ] Es bleibt **ein** durchgehender logischer Vorgangs-Kontext — es werden keine separaten KI-Sessions pro Rollenwechsel gestartet.
-- [ ] Die Prompt-Token pro Turn wachsen nach Verdichtung nachweislich langsamer als kumulativ-linear (Vergleichsmessung vorher/nachher an einem Mehr-Turn-Vorgang, z. B. dem NAS-Szenario).
-- [ ] Der System-Präfix bleibt byte-stabil/cachebar (PROJ-35 nicht verletzt); Verdichtung betrifft nur den variablen Verlaufsteil.
-- [ ] Schwellen (z. B. Token-Budget/Turn, Anzahl wörtlich erhaltener Nachrichten) sind über `.env` konfigurierbar und in `.env.example` dokumentiert (PROJ-30, Drift-Guard).
-- [ ] Diagnose-/Empfehlungsqualität bleibt erhalten: ein Regressions-Szenario führt nach Verdichtung zu einer gleichwertig sinnvollen Diagnose.
+- [x] Geladene Rollen-Volltexte werden nach Gebrauch aus dem fortgeschriebenen Verlauf entfernt oder durch einen kompakten Verweis ersetzt, sodass sie nicht in jedem Folge-Turn erneut gesendet werden.
+- [x] Bei langen Vorgängen wird der ältere Verlauf zu einem kompakten Zustands-Digest verdichtet (erkanntes Gerät, Symptome, bisherige Karten/Entscheidungen), während die jüngsten Nachrichten wörtlich erhalten bleiben.
+- [x] Es bleibt **ein** durchgehender logischer Vorgangs-Kontext — es werden keine separaten KI-Sessions pro Rollenwechsel gestartet.
+- [x] Die Prompt-Token pro Turn wachsen nach Verdichtung nachweislich langsamer als kumulativ-linear (Vergleichsmessung vorher/nachher an einem Mehr-Turn-Vorgang, z. B. dem NAS-Szenario).
+- [x] Der System-Präfix bleibt byte-stabil/cachebar (PROJ-35 nicht verletzt); Verdichtung betrifft nur den variablen Verlaufsteil.
+- [x] Schwellen (z. B. Token-Budget/Turn, Anzahl wörtlich erhaltener Nachrichten) sind über `.env` konfigurierbar und in `.env.example` dokumentiert (PROJ-30, Drift-Guard).
+- [x] Diagnose-/Empfehlungsqualität bleibt erhalten: ein Regressions-Szenario führt nach Verdichtung zu einer gleichwertig sinnvollen Diagnose.
 
 ## Edge Cases
 
@@ -68,7 +68,15 @@ erhalten bleiben. Der stabile System-Präfix (PROJ-35) bleibt unangetastet/cache
 _Wird von /architecture hinzugefügt_
 
 ## QA Test Results
-_Wird von /qa hinzugefügt_
+
+**Verifiziert 2026-05-31 (nachgetragen):** Umgesetzt in `repair/kontext.py` (`sende_sicht()`:
+Rollen-Volltexte werden nach Gebrauch entladen, älterer Verlauf zu einem Zustands-Digest
+verdichtet, jüngste `KONTEXT_WOERTLICH_TURNS` Turns bleiben wörtlich). **Ein** durchgehender
+logischer Kontext; der byte-stabile System-Präfix bleibt unverändert vorangestellt (siehe
+Guard in PROJ-48). Schwellen über `.env` konfigurierbar: `KONTEXT_TOKEN_BUDGET` (Default 6000)
+und `KONTEXT_WOERTLICH_TURNS` (Default 4), zentral in `repair/config.py`, dokumentiert in
+`.env.example`, Drift-Guard grün. Tests: `tests/test_orchestrator_kontext.py`. Gesamte Suite
+**237 passed**.
 
 ## Deployment
 _Wird von /deploy hinzugefügt_

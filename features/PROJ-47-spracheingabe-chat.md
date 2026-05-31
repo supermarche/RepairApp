@@ -1,6 +1,6 @@
 # PROJ-47: Spracheingabe im Chat (Diktat per OpenAI-Whisper)
 
-## Status: Planned
+## Status: In Review
 **Erstellt:** 2026-05-31
 **Zuletzt aktualisiert:** 2026-05-31
 
@@ -163,6 +163,3 @@ Transkript-Pfad, da echtes Mikrofon/Whisper im automatisierten Browser nicht ver
 ## Deployment
 _Wird von /deploy hinzugefügt_ — **Hinweis:** kein Merge durchgeführt (auf Wunsch). Stand: implementiert
 & verifiziert auf Branch `worktree-features-chatgpt`; Status „In Review".
-
-## Deployment
-_Wird von /deploy hinzugefügt_
