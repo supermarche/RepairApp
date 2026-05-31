@@ -61,14 +61,15 @@ export async function resolveGermanLocation(query, fetchImpl = fetch) {
     throw noAcceptableLocationError();
   }
 
-  const result = results.find((item) =>
-    isAcceptableResult(item, isPostcode, normalizedQuery),
-  );
+  const acceptedResult = results
+    .map((item) => getAcceptableResult(item, isPostcode, normalizedQuery))
+    .find(Boolean);
 
-  if (!result) {
+  if (!acceptedResult) {
     throw noAcceptableLocationError();
   }
 
+  const { result, displayName } = acceptedResult;
   const lat = parseCoordinate(result.lat);
   const lon = parseCoordinate(result.lon);
 
@@ -77,41 +78,55 @@ export async function resolveGermanLocation(query, fetchImpl = fetch) {
   }
 
   return {
-    displayName: result.display_name || normalizedQuery,
+    displayName,
     lat,
     lon,
     bbox: buildLocalBbox(lat, lon),
   };
 }
 
-function isAcceptableResult(result, isPostcode, query) {
+function getAcceptableResult(result, isPostcode, query) {
   if (!result || typeof result !== "object") {
-    return false;
+    return null;
   }
 
   const addressType = String(result.addresstype || "").toLowerCase();
   const type = String(result.type || "").toLowerCase();
 
   if (isPostcode) {
-    return addressType === "postcode" || type === "postcode";
+    return addressType === "postcode" || type === "postcode"
+      ? { result, displayName: result.display_name || query }
+      : null;
   }
 
   const isSettlement = settlementTypes.has(addressType) ||
     result.category === "place" && settlementTypes.has(type);
-
-  return isSettlement && getResultNames(result).some((name) =>
-    normalizeLocationName(name) === normalizeLocationName(query),
+  const matchingName = getResultNames(result).find(({ value }) =>
+    normalizeLocationName(value) === normalizeLocationName(query),
   );
+
+  return isSettlement && matchingName
+    ? {
+      result,
+      displayName: matchingName.canExpose ? matchingName.value : query,
+    }
+    : null;
 }
 
 function getResultNames(result) {
   const namedetails = result.namedetails || {};
   const namedetailNames = Object.entries(namedetails)
-    .filter(([key]) => key === "name" || key.startsWith("name:"))
-    .map(([, value]) => value);
-  const displayName = String(result.display_name || "").split(",")[0];
+    .filter(([key, value]) =>
+      (key === "name" || key.startsWith("name:")) &&
+      typeof value === "string" &&
+      value.trim()
+    )
+    .map(([, value]) => ({ value: value.trim(), canExpose: true }));
+  const displayName = String(result.display_name || "").split(",")[0].trim();
 
-  return [...namedetailNames, displayName];
+  return displayName
+    ? [...namedetailNames, { value: displayName, canExpose: false }]
+    : namedetailNames;
 }
 
 function normalizeLocationName(value) {
